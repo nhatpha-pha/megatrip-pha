@@ -1,0 +1,138 @@
+{
+  "orders": [
+    {
+      "id": "order_001",
+      "orderNumber": "DH202401001",
+      "customerId": "cus_001",
+      "customer": {
+        "id": "cus_001",
+        "name": "Nguyễn Văn An",
+        "email": "vanan@example.com",
+        "phone": "0901234567",
+        "isVip": true
+      },
+      "items": [
+        {
+          "type": "tour",
+          "id": "tour_001",
+          "title": "Du thuyền Hạ Long 3N2Đ",
+          "image": "/placeholder.svg",
+          "qty": 2,
+          "unitPrice": 3500000,
+          "subtotal": 7000000
+        }
+      ],
+      "subtotal": 7000000,
+      "discounts": [
+        {
+          "code": "VIP10",
+          "amount": 700000,
+          "description": "Giảm giá VIP 10%"
+        }
+      ],
+      "fees": [
+        {
+          "type": "service",
+          "name": "Phí dịch vụ",
+          "amount": 150000
+        }
+      ],
+      "total": 6450000,
+      "payment": {
+        "method": "bank_transfer",
+        "status": "paid",
+        "gateway": "VNPay",
+        "transactionId": "TXN_12345678",
+        "paidAt": "2024-01-15T10:30:00+07:00"
+      },
+      "orderStatus": "confirmed",
+      "timeline": [
+        {
+          "status": "created",
+          "note": "Đơn hàng được tạo",
+          "actor": "Customer",
+          "timestamp": "2024-01-15T10:00:00+07:00"
+        },
+        {
+          "status": "paid",
+          "note": "Thanh toán thành công",
+          "actor": "System",
+          "timestamp": "2024-01-15T10:30:00+07:00"
+        },
+        {
+          "status": "confirmed",
+          "note": "Xác nhận đơn hàng",
+          "actor": "Admin",
+          "timestamp": "2024-01-15T11:00:00+07:00"
+        }
+      ],
+      "notes": [],
+      "createdAt": "2024-01-15T10:00:00+07:00",
+      "updatedAt": "2024-01-15T11:00:00+07:00"
+    },
+    {
+      "id": "order_002",
+      "orderNumber": "DH202401002",
+      "customerId": "cus_002",
+      "customer": {
+        "id": "cus_002",
+        "name": "Trần Thị Bình",
+        "email": "tb@example.com",
+        "phone": "0912345678",
+        "isVip": false
+      },
+      "items": [
+        {
+          "type": "flight",
+          "id": "flight_001",
+          "title": "VN123: Hà Nội → TP.HCM",
+          "image": "/placeholder.svg",
+          "qty": 1,
+          "unitPrice": 1200000,
+          "subtotal": 1200000
+        }
+      ],
+      "subtotal": 1200000,
+      "discounts": [],
+      "fees": [
+        {
+          "type": "service",
+          "name": "Phí dịch vụ",
+          "amount": 50000
+        },
+        {
+          "type": "tax",
+          "name": "Thuế VAT",
+          "amount": 125000
+        }
+      ],
+      "total": 1375000,
+      "payment": {
+        "method": "credit_card",
+        "status": "pending",
+        "gateway": "Stripe",
+        "transactionId": null,
+        "paidAt": null
+      },
+      "orderStatus": "pending",
+      "timeline": [
+        {
+          "status": "created",
+          "note": "Đơn hàng được tạo",
+          "actor": "Customer",
+          "timestamp": "2024-01-16T14:20:00+07:00"
+        }
+      ],
+      "notes": [
+        {
+          "content": "Khách hàng yêu cầu chỗ ngồi cửa sổ",
+          "actor": "Admin",
+          "timestamp": "2024-01-16T15:00:00+07:00",
+          "isInternal": false
+        }
+      ],
+      "createdAt": "2024-01-16T14:20:00+07:00",
+      "updatedAt": "2024-01-16T15:00:00+07:00"
+    }
+  ]
+}

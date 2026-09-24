@@ -1,0 +1,100 @@
+{
+  "flights": [
+    {
+      "id": "flight_001",
+      "flightCode": "VN123",
+      "airlineId": "op_001",
+      "airline": {
+        "id": "op_001",
+        "name": "Vietnam Airlines",
+        "code": "VN",
+        "logo": "/placeholder.svg"
+      },
+      "fromAirport": {
+        "code": "HAN",
+        "name": "Sân bay Nội Bài",
+        "city": "Hà Nội"
+      },
+      "toAirport": {
+        "code": "SGN",
+        "name": "Sân bay Tân Sơn Nhất",
+        "city": "TP.HCM"
+      },
+      "departureAt": "2024-11-20T08:00:00+07:00",
+      "arrivalAt": "2024-11-20T10:15:00+07:00",
+      "duration": "2h 15m",
+      "cabinClass": ["Economy", "Business"],
+      "price": 1200000,
+      "seatsTotal": 180,
+      "seatsAvailable": 150,
+      "baggageInfo": "Hành lý xách tay 7kg, hành lý ký gửi 23kg",
+      "status": "Active",
+      "createdAt": "2024-01-15T10:00:00+07:00",
+      "updatedAt": "2024-01-20T14:30:00+07:00"
+    },
+    {
+      "id": "flight_002",
+      "flightCode": "VJ456",
+      "airlineId": "op_002",
+      "airline": {
+        "id": "op_002",
+        "name": "VietJet Air",
+        "code": "VJ",
+        "logo": "/placeholder.svg"
+      },
+      "fromAirport": {
+        "code": "SGN",
+        "name": "Sân bay Tân Sơn Nhất",
+        "city": "TP.HCM"
+      },
+      "toAirport": {
+        "code": "DAD",
+        "name": "Sân bay Đà Nẵng",
+        "city": "Đà Nẵng"
+      },
+      "departureAt": "2024-11-20T14:20:00+07:00",
+      "arrivalAt": "2024-11-20T15:35:00+07:00",
+      "duration": "1h 15m",
+      "cabinClass": ["Economy"],
+      "price": 850000,
+      "seatsTotal": 189,
+      "seatsAvailable": 125,
+      "baggageInfo": "Hành lý xách tay 7kg",
+      "status": "Active",
+      "createdAt": "2024-01-18T09:15:00+07:00",
+      "updatedAt": "2024-01-25T11:20:00+07:00"
+    },
+    {
+      "id": "flight_003",
+      "flightCode": "QH789",
+      "airlineId": "op_003",
+      "airline": {
+        "id": "op_003",
+        "name": "Bamboo Airways",
+        "code": "QH",
+        "logo": "/placeholder.svg"
+      },
+      "fromAirport": {
+        "code": "HAN",
+        "name": "Sân bay Nội Bài",
+        "city": "Hà Nội"
+      },
+      "toAirport": {
+        "code": "PQC",
+        "name": "Sân bay Phú Quốc",
+        "city": "Phú Quốc"
+      },
+      "departureAt": "2024-11-21T06:45:00+07:00",
+      "arrivalAt": "2024-11-21T08:30:00+07:00",
+      "duration": "1h 45m",
+      "cabinClass": ["Economy", "Business"],
+      "price": 1650000,
+      "seatsTotal": 166,
+      "seatsAvailable": 89,
+      "baggageInfo": "Hành lý xách tay 7kg, hành lý ký gửi 23kg",
+      "status": "Active",
+      "createdAt": "2024-01-20T16:45:00+07:00",
+      "updatedAt": "2024-01-28T09:10:00+07:00"
+    }
+  ]
+}

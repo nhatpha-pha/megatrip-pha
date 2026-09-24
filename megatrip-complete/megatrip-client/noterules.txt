@@ -1,0 +1,28 @@
+chính sách hủy của bus ;
+≥ 72 giờ trước giờ khởi hành: Phí 10%, hoàn 90%.
+24 – 72 giờ trước: Phí 25%, hoàn 75%.
+12 – <24 giờ trước: Phí 50%, hoàn 50%.
+<12 giờ hoặc sau khi xe chạy: Không hoàn tiền.
+chính sách hủy của tour :
+Chính sách hủy tour
+Trước 15 ngày:20% tổng tiền tour
+7-14 ngày:50% tổng tiền tour
+3-6 ngày :75% tổng tiền tour
+Trong 3 ngày trước khởi hành 100% tổng tiền tour
+
+
+
+
+{booking?.type === 'bus' ? (
+<>
+- Đổi ≥ 72 giờ trước giờ khởi hành: phí 50.000đ / khách<br />
+  - Đổi 24 – 72 giờ trước: phí 50.000đ / khách + 25% giá vé<br />
+  - Đổi &lt; 24 giờ: không cho đổi
+</>
+) : (
+ <>
+  - Trên 5 ngày: 30% giá trị tour<br />
+  - Từ 5 ngày trước: 50% giá trị tour<br />
+  - 3 ngày trước: 100% giá trị tour
+ </>
+)}

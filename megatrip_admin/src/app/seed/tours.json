@@ -1,0 +1,93 @@
+{
+  "tours": [
+    {
+      "id": "tour_001",
+      "title": "Du thuyền Hạ Long 3N2Đ",
+      "title_vn": "Du thuyền Vịnh Hạ Long 3 ngày 2 đêm",
+      "slug": "du-thuyen-ha-long-3n2d",
+      "summary": "Trải nghiệm Vịnh Hạ Long 3 ngày 2 đêm với du thuyền sang trọng, khám phá hang động và làng chài truyền thống",
+      "description": "Tour du thuyền Hạ Long 3N2Đ mang đến trải nghiệm tuyệt vời khám phá vịnh Hạ Long - di sản thiên nhiên thế giới...",
+      "departure": "Hà Nội",
+      "destination": "Vịnh Hạ Long",
+      "startDate": "2024-12-01",
+      "endDate": "2026-12-31",
+      "duration": "3 ngày 2 đêm",
+      "priceAdult": 3500000,
+      "priceChild": 2000000,
+      "seatsTotal": 40,
+      "seatsBooked": 28,
+      "status": "active",
+      "highlight": true,
+      "categoryId": "cat_001",
+      "tags": ["thiên nhiên", "du thuyền", "gia đình", "di sản"],
+      "images": ["/placeholder.svg", "/placeholder.svg"],
+      "itinerary": [
+        {
+          "dayNumber": 1,
+          "title": "Hà Nội - Hạ Long - Lên du thuyền",
+          "details": "Khởi hành từ Hà Nội, di chuyển đến Hạ Long, checkin du thuyền và ăn trưa. Tham quan hang Sung Sốt."
+        },
+        {
+          "dayNumber": 2,
+          "title": "Khám phá vịnh Hạ Long",
+          "details": "Thăm làng chài Cửa Vạn, kayak khám phá hang động, câu cá và BBQ tối trên boong du thuyền."
+        },
+        {
+          "dayNumber": 3,
+          "title": "Hạ Long - Hà Nội",
+          "details": "Tai Chi buổi sáng, tham quan Titop, ăn trưa và trở về Hà Nội."
+        }
+      ],
+      "inclusions": ["Xe đưa đón", "Du thuyền 4*", "Ăn uống theo chương trình", "Hướng dẫn viên", "Vé tham quan"],
+      "exclusions": ["Chi phí cá nhân", "Đồ uống có cồn", "Bảo hiểm du lịch"],
+      "pickupPoints": ["Hà Nội", "Hải Phòng"],
+      "rating": 4.8,
+      "reviewCount": 156,
+      "metaTitle": "Tour Du thuyền Hạ Long 3N2Đ - Khám phá vịnh di sản thế giới",
+      "metaDescription": "Khám phá vẻ đẹp vịnh Hạ Long với tour du thuyền 3 ngày 2 đêm. Giá tốt, dịch vụ chất lượng cao.",
+      "metaKeywords": "tour hạ long, du thuyền hạ long, du lịch hạ long, vịnh hạ long",
+      "createdAt": "2024-01-15T10:00:00+07:00",
+      "updatedAt": "2024-01-20T14:30:00+07:00"
+    },
+    {
+      "id": "tour_002",
+      "title": "Sapa 2N1Đ khám phá bản làng",
+      "slug": "sapa-2n1d-kham-pha-ban-lang",
+      "summary": "Trekking Sapa 2 ngày 1 đêm, khám phá bản làng dân tộc và ngắm ruộng bậc thang tuyệt đẹp",
+      "description": "Tour Sapa 2N1Đ đưa bạn khám phá vẻ đẹp núi rừng Tây Bắc với những bản làng dân tộc độc đáo...",
+      "departure": "Hà Nội",
+      "destination": "Sapa",
+      "startDate": "2024-09-01",
+      "endDate": "2026-03-31",
+      "duration": "2 ngày 1 đêm",
+      "priceAdult": 1800000,
+      "priceChild": 1400000,
+      "seatsTotal": 30,
+      "seatsBooked": 22,
+      "status": "active",
+      "highlight": false,
+      "categoryId": "cat_002",
+      "tags": ["trekking", "núi non", "dân tộc", "ruộng bậc thang"],
+      "images": ["/placeholder.svg"],
+      "itinerary": [
+        {
+          "dayNumber": 1,
+          "title": "Hà Nội - Sapa - Bản Cát Cát",
+          "details": "Khởi hành từ Hà Nội, đến Sapa, thăm bản Cát Cát và tìm hiểu văn hóa dân tộc H'Mông."
+        },
+        {
+          "dayNumber": 2,
+          "title": "Fansipan - Hà Nội",
+          "details": "Chinh phục đỉnh Fansipan bằng cáp treo, ngắm toàn cảnh Sapa từ trên cao, về Hà Nội."
+        }
+      ],
+      "inclusions": ["Xe đưa đón", "Khách sạn 3*", "Ăn uống", "Hướng dẫn viên", "Vé cáp treo"],
+      "exclusions": ["Chi phí cá nhân", "Bảo hiểm", "Đồ uống"],
+      "pickupPoints": ["Hà Nội"],
+      "rating": 4.5,
+      "reviewCount": 89,
+      "createdAt": "2024-01-20T09:15:00+07:00",
+      "updatedAt": "2024-01-25T11:20:00+07:00"
+    }
+  ]
+}

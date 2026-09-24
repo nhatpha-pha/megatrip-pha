@@ -1,0 +1,74 @@
+{
+  "operators": [
+    {
+      "id": "op_001",
+      "name": "Vietnam Airlines",
+      "type": "airline",
+      "code": "VN",
+      "logo": "/placeholder.svg",
+      "contactPerson": "Nguyễn Văn A",
+      "email": "contact@vietnamairlines.com",
+      "phone": "1900545484",
+      "partnershipStart": "2020-01-01",
+      "partnershipEnd": "2025-12-31",
+      "status": "active",
+      "notes": "Hãng hàng không quốc gia, đối tác chiến lược"
+    },
+    {
+      "id": "op_002",
+      "name": "VietJet Air",
+      "type": "airline",
+      "code": "VJ",
+      "logo": "/placeholder.svg",
+      "contactPerson": "Trần Thị B",
+      "email": "partner@vietjetair.com",
+      "phone": "1900545425",
+      "partnershipStart": "2021-03-15",
+      "partnershipEnd": "2026-03-14",
+      "status": "active",
+      "notes": "Hãng hàng không gi�� rẻ hàng đầu"
+    },
+    {
+      "id": "op_003",
+      "name": "Bamboo Airways",
+      "type": "airline",
+      "code": "QH",
+      "logo": "/placeholder.svg",
+      "contactPerson": "Lê Văn C",
+      "email": "sales@bambooairways.com",
+      "phone": "1900545454",
+      "partnershipStart": "2022-06-01",
+      "partnershipEnd": "2027-05-31",
+      "status": "active",
+      "notes": "Hãng hàng không boutique"
+    },
+    {
+      "id": "op_004",
+      "name": "Phương Trang",
+      "type": "bus",
+      "code": "PT",
+      "logo": "/placeholder.svg",
+      "contactPerson": "Phạm Văn D",
+      "email": "info@phuongtrang.vn",
+      "phone": "02839386888",
+      "partnershipStart": "2019-08-01",
+      "partnershipEnd": "2024-07-31",
+      "status": "active",
+      "notes": "Nhà xe uy tín miền Nam"
+    },
+    {
+      "id": "op_005",
+      "name": "Saigon Tourist",
+      "type": "tour_operator",
+      "code": "ST",
+      "logo": "/placeholder.svg",
+      "contactPerson": "Hoàng Thị E",
+      "email": "partner@saigontourist.net",
+      "phone": "02838279279",
+      "partnershipStart": "2018-01-01",
+      "partnershipEnd": "2025-12-31",
+      "status": "active",
+      "notes": "Công ty lữ hành hàng đầu TP.HCM"
+    }
+  ]
+}

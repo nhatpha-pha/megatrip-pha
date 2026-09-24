@@ -1,0 +1,79 @@
+{
+  "customers": [
+    {
+      "id": "cus_001",
+      "name": "Nguyễn Văn An",
+      "email": "vanan@example.com",
+      "phone": "0901234567",
+      "avatar": "/placeholder.svg",
+      "type": "VIP",
+      "status": "active",
+      "address": "123 Lê Lợi, Q1, TP.HCM",
+      "notes": "Khách hàng VIP, thường đặt tour cao cấp",
+      "totalOrders": 12,
+      "totalSpent": 45000000,
+      "registeredAt": "2024-01-15T10:00:00+07:00",
+      "lastOrderAt": "2024-01-10T14:30:00+07:00"
+    },
+    {
+      "id": "cus_002",
+      "name": "Trần Thị Bình",
+      "email": "tb@example.com",
+      "phone": "0912345678",
+      "avatar": "/placeholder.svg",
+      "type": "Normal",
+      "status": "active",
+      "address": "456 Nguyễn Huệ, Q1, TP.HCM",
+      "notes": "",
+      "totalOrders": 3,
+      "totalSpent": 8500000,
+      "registeredAt": "2024-02-20T09:15:00+07:00",
+      "lastOrderAt": "2024-01-05T16:20:00+07:00"
+    },
+    {
+      "id": "cus_003",
+      "name": "Lê Minh Cường",
+      "email": "leminhcuong@example.com",
+      "phone": "0903456789",
+      "avatar": "/placeholder.svg",
+      "type": "Normal",
+      "status": "blocked",
+      "address": "789 Pasteur, Q3, TP.HCM",
+      "notes": "Khách có tranh chấp đơn hàng",
+      "totalOrders": 1,
+      "totalSpent": 1200000,
+      "registeredAt": "2023-12-10T11:30:00+07:00",
+      "lastOrderAt": "2023-12-15T09:45:00+07:00"
+    },
+    {
+      "id": "cus_004",
+      "name": "Phạm Thu Dung",
+      "email": "phamthudung@example.com",
+      "phone": "0907891234",
+      "avatar": "/placeholder.svg",
+      "type": "VIP",
+      "status": "active",
+      "address": "321 Điện Biên Phủ, Q.Bình Thạnh, TP.HCM",
+      "notes": "Khách hàng thân thiết từ 2022",
+      "totalOrders": 18,
+      "totalSpent": 72000000,
+      "registeredAt": "2022-03-05T14:20:00+07:00",
+      "lastOrderAt": "2024-01-12T10:15:00+07:00"
+    },
+    {
+      "id": "cus_005",
+      "name": "Hoàng Văn Nam",
+      "email": "hoangvannam@example.com",
+      "phone": "0935678912",
+      "avatar": "/placeholder.svg",
+      "type": "Normal",
+      "status": "active",
+      "address": "567 Cộng Hòa, Q.Tân Bình, TP.HCM",
+      "notes": "",
+      "totalOrders": 2,
+      "totalSpent": 4200000,
+      "registeredAt": "2024-01-28T16:45:00+07:00",
+      "lastOrderAt": "2024-02-02T12:30:00+07:00"
+    }
+  ]
+}
