@@ -15,6 +15,7 @@ const supportRoutes = require('./routes/supportRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
 const newsRoutes = require('./routes/newsRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const statsRoutes = require('./routes/statsRoutes');
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/admin/news', newsRoutes);
+app.use('/api/stats', statsRoutes);
 app.use('/api/news', newsRoutes); // alias public
 
 // Payment: mount cả ở root (khớp code hiện tại của frontend) lẫn dưới /api/payments

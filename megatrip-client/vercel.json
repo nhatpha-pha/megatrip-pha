@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/admin",
+      "destination": "https://megatrip-pha-ra2g.vercel.app/admin"
+    },
+    {
+      "source": "/admin/:path*",
+      "destination": "https://megatrip-pha-ra2g.vercel.app/admin/:path*"
+    }
+  ]
+}

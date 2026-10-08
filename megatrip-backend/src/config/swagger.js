@@ -104,6 +104,7 @@ const options = {
       { name: 'Reviews', description: 'Đánh giá sản phẩm' },
       { name: 'Support', description: 'Yêu cầu hỗ trợ / ticket' },
       { name: 'News', description: 'Tin tức (admin)' },
+      { name: 'Stats', description: 'Thống kê dashboard admin' },
       { name: 'Payments', description: 'VNPay / MoMo / ZaloPay' },
     ],
   },

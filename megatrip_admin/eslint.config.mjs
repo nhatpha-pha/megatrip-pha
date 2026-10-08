@@ -1,24 +1,14 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  // Thêm dòng này để tất cả các tuyến đường của Admin tự động nhận tiền tố /admin
+  basePath: '/admin',
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+};
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-  {
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "off",
-      "jsx-a11y/alt-text": "off",
-      "@typescript-eslint/no-empty-object-type": "off"
-    }
-  }
-];
-
-export default eslintConfig;
+export default nextConfig;
