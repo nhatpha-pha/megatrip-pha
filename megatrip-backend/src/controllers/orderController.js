@@ -34,7 +34,7 @@ const getOrderById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy đơn hàng');
   }
-  res.json(order);
+  res.json({ data: order });
 });
 
 // GET /api/orders/:id/details  &  /api/orders/:id/client/details
@@ -44,7 +44,7 @@ const getOrderDetails = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy đơn hàng');
   }
-  res.json(order);
+  res.json({ data: order });
 });
 
 // GET /api/orders/customer/:customerId
@@ -74,7 +74,7 @@ const createOrder = asyncHandler(async (req, res) => {
     total,
     timeline: [{ status: 'pending', note: 'Đơn hàng được tạo', actor: body.customerName || 'system', timestamp: new Date() }],
   });
-  res.status(201).json(order);
+  res.status(201).json({ data: order });
 });
 
 // PUT /api/orders/:id
@@ -95,7 +95,7 @@ const updateOrder = asyncHandler(async (req, res) => {
     });
   }
   await order.save();
-  res.json(order);
+  res.json({ data: order });
 });
 
 // DELETE /api/orders/:id
@@ -105,7 +105,7 @@ const deleteOrder = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy đơn hàng');
   }
-  res.json({ message: 'Đã xoá đơn hàng' });
+  res.json({ data: { message: 'Đã xoá đơn hàng' } });
 });
 
 // PUT /api/orders/:id/change-calendar
@@ -124,7 +124,7 @@ const changeOrderCalendar = asyncHandler(async (req, res) => {
     timestamp: new Date(),
   });
   await order.save();
-  res.json(order);
+  res.json({ data: order });
 });
 
 // GET /api/orders/stats/by-customers
@@ -141,7 +141,7 @@ const statsByCustomers = asyncHandler(async (req, res) => {
     },
     { $sort: { totalSpent: -1 } },
   ]);
-  res.json(stats);
+  res.json({ data: stats });
 });
 
 module.exports = {

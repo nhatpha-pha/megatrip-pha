@@ -23,13 +23,13 @@ const getBusById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy chuyến xe');
   }
-  res.json(bus);
+  res.json({ data: bus });
 });
 
 // POST /api/buses
 const createBus = asyncHandler(async (req, res) => {
   const bus = await Bus.create(req.body);
-  res.status(201).json(bus);
+  res.status(201).json({ data: bus });
 });
 
 // PUT /api/buses/:id
@@ -39,7 +39,7 @@ const updateBus = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy chuyến xe');
   }
-  res.json(bus);
+  res.json({ data: bus });
 });
 
 // DELETE /api/buses/:id
@@ -49,7 +49,7 @@ const deleteBus = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy chuyến xe');
   }
-  res.json({ message: 'Đã xoá chuyến xe' });
+  res.json({ data: { message: 'Đã xoá chuyến xe' } });
 });
 
 // GET /api/buses/bus-slots/:id  (id = busId)
@@ -59,7 +59,7 @@ const getBusSlots = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy chuyến xe');
   }
-  res.json(bus.slots || []);
+  res.json({ data: bus.slots || [] });
 });
 
 module.exports = { listBuses, getBusById, createBus, updateBus, deleteBus, getBusSlots };

@@ -25,13 +25,13 @@ const getTicketById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy yêu cầu hỗ trợ');
   }
-  res.json(ticket);
+  res.json({ data: ticket });
 });
 
 // POST /api/support
 const createTicket = asyncHandler(async (req, res) => {
   const ticket = await Ticket.create(req.body);
-  res.status(201).json(ticket);
+  res.status(201).json({ data: ticket });
 });
 
 // PUT /api/support/:id
@@ -41,7 +41,7 @@ const updateTicket = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy yêu cầu hỗ trợ');
   }
-  res.json(ticket);
+  res.json({ data: ticket });
 });
 
 // DELETE /api/support/:id
@@ -51,7 +51,7 @@ const deleteTicket = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy yêu cầu hỗ trợ');
   }
-  res.json({ message: 'Đã xoá yêu cầu hỗ trợ' });
+  res.json({ data: { message: 'Đã xoá yêu cầu hỗ trợ' } });
 });
 
 // POST /api/tickets/:id/responses  (thêm phản hồi vào ticket)
@@ -64,7 +64,7 @@ const addTicketResponse = asyncHandler(async (req, res) => {
   ticket.responses.push(req.body);
   if (ticket.status === 'new') ticket.status = 'open';
   await ticket.save();
-  res.status(201).json(ticket);
+  res.status(201).json({ data: ticket });
 });
 
 module.exports = { listTickets, getTicketById, createTicket, updateTicket, deleteTicket, addTicketResponse };

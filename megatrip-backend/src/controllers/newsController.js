@@ -24,7 +24,7 @@ const getNewsById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy bài viết');
   }
-  res.json(article);
+  res.json({ data: article });
 });
 
 // GET /api/news/slug/:slug (public)
@@ -34,7 +34,7 @@ const getNewsBySlug = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy bài viết');
   }
-  res.json(article);
+  res.json({ data: article });
 });
 
 // POST /api/admin/news
@@ -43,7 +43,7 @@ const createNews = asyncHandler(async (req, res) => {
   if (!body.slug && body.title) body.slug = slugify(body.title, { lower: true, locale: 'vi' });
   if (body.status === 'published' && !body.publishedAt) body.publishedAt = new Date();
   const article = await News.create(body);
-  res.status(201).json(article);
+  res.status(201).json({ data: article });
 });
 
 // PUT /api/admin/news/:id
@@ -55,7 +55,7 @@ const updateNews = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy bài viết');
   }
-  res.json(article);
+  res.json({ data: article });
 });
 
 // DELETE /api/admin/news/:id
@@ -65,7 +65,7 @@ const deleteNews = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy bài viết');
   }
-  res.json({ message: 'Đã xoá bài viết' });
+  res.json({ data: { message: 'Đã xoá bài viết' } });
 });
 
 module.exports = { listNews, getNewsById, getNewsBySlug, createNews, updateNews, deleteNews };

@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const authRoutes = require('./routes/authRoutes');
@@ -29,6 +31,17 @@ if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 
 app.get('/', (req, res) => res.json({ message: 'MegaTrip API đang chạy' }));
 app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
+
+// Swagger UI: http://localhost:<PORT>/api-docs
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'MegaTrip API Docs',
+  })
+);
+// JSON thuần của spec, hữu ích để import vào Postman/Insomnia
+app.get('/api-docs.json', (req, res) => res.json(swaggerSpec));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/tours', tourRoutes);

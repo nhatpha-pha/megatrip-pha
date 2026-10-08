@@ -21,13 +21,13 @@ const listReviewsByProduct = asyncHandler(async (req, res) => {
   const reviews = await Review.find({ productId: req.params.productId, isVisible: true })
     .populate('customerId', 'name avatar')
     .sort({ createdAt: -1 });
-  res.json(reviews);
+  res.json({ data: reviews });
 });
 
 // POST /api/reviews
 const createReview = asyncHandler(async (req, res) => {
   const review = await Review.create(req.body);
-  res.status(201).json(review);
+  res.status(201).json({ data: review });
 });
 
 // PUT /api/reviews/:id
@@ -37,7 +37,7 @@ const updateReview = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy đánh giá');
   }
-  res.json(review);
+  res.json({ data: review });
 });
 
 // DELETE /api/reviews/:id
@@ -47,7 +47,7 @@ const deleteReview = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy đánh giá');
   }
-  res.json({ message: 'Đã xoá đánh giá' });
+  res.json({ data: { message: 'Đã xoá đánh giá' } });
 });
 
 module.exports = { listReviews, listReviewsByProduct, createReview, updateReview, deleteReview };

@@ -24,13 +24,13 @@ const getPromotionById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy mã khuyến mãi');
   }
-  res.json(promo);
+  res.json({ data: promo });
 });
 
 // POST /api/promotions
 const createPromotion = asyncHandler(async (req, res) => {
   const promo = await Promotion.create(req.body);
-  res.status(201).json(promo);
+  res.status(201).json({ data: promo });
 });
 
 // PUT /api/promotions/:id
@@ -40,7 +40,7 @@ const updatePromotion = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy mã khuyến mãi');
   }
-  res.json(promo);
+  res.json({ data: promo });
 });
 
 // DELETE /api/promotions/:id
@@ -50,7 +50,7 @@ const deletePromotion = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy mã khuyến mãi');
   }
-  res.json({ message: 'Đã xoá mã khuyến mãi' });
+  res.json({ data: { message: 'Đã xoá mã khuyến mãi' } });
 });
 
 // POST /api/promotions/validate  { code, appliesTo, orderTotal }
@@ -83,7 +83,7 @@ const validatePromotion = asyncHandler(async (req, res) => {
     throw new Error(`Đơn hàng tối thiểu ${promo.minSpend.toLocaleString('vi-VN')}đ để áp dụng mã này`);
   }
   const discountAmount = promo.type === 'percent' ? Math.round((orderTotal * promo.value) / 100) : promo.value;
-  res.json({ valid: true, promotion: promo, discountAmount });
+  res.json({ data: { valid: true, promotion: promo, discountAmount } });
 });
 
 module.exports = {

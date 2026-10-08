@@ -32,7 +32,7 @@ const register = asyncHandler(async (req, res) => {
     html: `<p>Mã OTP của bạn là: <b>${otpCode}</b> (hết hạn sau 10 phút)</p>`,
   });
 
-  res.status(201).json({ message: 'Đăng ký thành công, vui lòng kiểm tra email để xác thực OTP', email: user.email });
+  res.status(201).json({ data: { message: 'Đăng ký thành công, vui lòng kiểm tra email để xác thực OTP', email: user.email } });
 });
 
 // @route POST /api/auth/verify-otp
@@ -44,7 +44,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
     throw new Error('Không tìm thấy tài khoản');
   }
   if (user.isVerified) {
-    return res.json({ message: 'Tài khoản đã được xác thực trước đó' });
+    return res.json({ data: { message: 'Tài khoản đã được xác thực trước đó' } });
   }
   if (!user.otpCode || user.otpCode !== code || user.otpExpires < new Date()) {
     res.status(400);
@@ -54,7 +54,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
   user.otpCode = undefined;
   user.otpExpires = undefined;
   await user.save();
-  res.json({ message: 'Xác thực tài khoản thành công' });
+  res.json({ data: { message: 'Xác thực tài khoản thành công' } });
 });
 
 // @route POST /api/auth/resend-otp
@@ -66,7 +66,7 @@ const resendOtp = asyncHandler(async (req, res) => {
     throw new Error('Không tìm thấy tài khoản');
   }
   if (user.isVerified) {
-    return res.json({ message: 'Tài khoản đã được xác thực' });
+    return res.json({ data: { message: 'Tài khoản đã được xác thực' } });
   }
   const otpCode = generateOtp();
   user.otpCode = otpCode;
@@ -77,7 +77,7 @@ const resendOtp = asyncHandler(async (req, res) => {
     subject: 'MegaTrip - Mã OTP mới',
     html: `<p>Mã OTP mới của bạn là: <b>${otpCode}</b> (hết hạn sau 10 phút)</p>`,
   });
-  res.json({ message: 'Đã gửi lại mã OTP' });
+  res.json({ data: { message: 'Đã gửi lại mã OTP' } });
 });
 
 // @route POST /api/auth/login
@@ -103,7 +103,7 @@ const login = asyncHandler(async (req, res) => {
   }
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
-  res.json({ accessToken, refreshToken, user: user.toJSON() });
+  res.json({ data: { accessToken, refreshToken, token: accessToken, user: user.toJSON() } });
 });
 
 // @route POST /api/auth/forgot-password
@@ -112,7 +112,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email: email?.toLowerCase() });
   if (!user) {
     // không tiết lộ email tồn tại hay không
-    return res.json({ message: 'Nếu email tồn tại, hướng dẫn đặt lại mật khẩu đã được gửi' });
+    return res.json({ data: { message: 'Nếu email tồn tại, hướng dẫn đặt lại mật khẩu đã được gửi' } });
   }
   const token = crypto.randomBytes(32).toString('hex');
   user.resetToken = token;
@@ -123,7 +123,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     subject: 'MegaTrip - Đặt lại mật khẩu',
     html: `<p>Mã token đặt lại mật khẩu: <b>${token}</b> (hết hạn sau 30 phút)</p>`,
   });
-  res.json({ message: 'Nếu email tồn tại, hướng dẫn đặt lại mật khẩu đã được gửi' });
+  res.json({ data: { message: 'Nếu email tồn tại, hướng dẫn đặt lại mật khẩu đã được gửi' } });
 });
 
 // @route POST /api/auth/reset-password
@@ -138,12 +138,12 @@ const resetPassword = asyncHandler(async (req, res) => {
   user.resetToken = undefined;
   user.resetTokenExpires = undefined;
   await user.save();
-  res.json({ message: 'Đặt lại mật khẩu thành công' });
+  res.json({ data: { message: 'Đặt lại mật khẩu thành công' } });
 });
 
 // @route GET /api/auth/me
 const getMe = asyncHandler(async (req, res) => {
-  res.json(req.user.toJSON());
+  res.json({ data: req.user.toJSON() });
 });
 
 // @route PUT /api/auth/me  (updateProfile: name, address, phone, dob)
@@ -155,7 +155,7 @@ const updateMe = asyncHandler(async (req, res) => {
   if (phone !== undefined) user.phone = phone;
   if (dob !== undefined) user.dob = dob;
   await user.save();
-  res.json(user.toJSON());
+  res.json({ data: user.toJSON() });
 });
 
 // @route PUT /api/auth/me/password
@@ -169,7 +169,7 @@ const changePassword = asyncHandler(async (req, res) => {
   }
   user.password = await bcrypt.hash(newPassword, 10);
   await user.save();
-  res.json({ message: 'Đổi mật khẩu thành công' });
+  res.json({ data: { message: 'Đổi mật khẩu thành công' } });
 });
 
 // ===== Admin: users management =====
@@ -203,7 +203,7 @@ const getUserById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy người dùng');
   }
-  res.json(user.toJSON());
+  res.json({ data: user.toJSON() });
 });
 
 // @route POST /api/auth/admin/user
@@ -216,7 +216,7 @@ const adminCreateUser = asyncHandler(async (req, res) => {
   }
   const hashed = await bcrypt.hash(password || '123456', 10);
   const user = await User.create({ email: email.toLowerCase(), password: hashed, name, role, isVerified: true });
-  res.status(201).json(user.toJSON());
+  res.status(201).json({ data: user.toJSON() });
 });
 
 // @route PUT /api/auth/admin/user/:id
@@ -234,7 +234,7 @@ const adminUpdateUser = asyncHandler(async (req, res) => {
   if (status !== undefined) user.status = status;
   if (email !== undefined) user.email = email.toLowerCase();
   await user.save();
-  res.json(user.toJSON());
+  res.json({ data: user.toJSON() });
 });
 
 // @route DELETE /api/auth/admin/user/:id
@@ -244,7 +244,7 @@ const adminDeleteUser = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy người dùng');
   }
-  res.json({ message: 'Đã xoá người dùng' });
+  res.json({ data: { message: 'Đã xoá người dùng' } });
 });
 
 module.exports = {

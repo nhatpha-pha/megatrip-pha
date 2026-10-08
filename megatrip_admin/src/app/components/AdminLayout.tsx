@@ -23,7 +23,8 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Plus
+  Plus,
+  ExternalLink
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "./ui/button";
@@ -57,6 +58,10 @@ const navigation = [
   { name: 'Chăm sóc khách hàng', href: '/support', icon: HeadphonesIcon },
   { name: 'Cài đặt hệ thống', href: '/system-settings', icon: Cog },
 ];
+
+// Trang khách hàng (megatrip-client) là app Next.js riêng, chạy ở cổng khác —
+// đặt NEXT_PUBLIC_CLIENT_URL trong .env.local nếu cổng của bạn khác 3000.
+const CLIENT_SITE_URL = process.env.NEXT_PUBLIC_CLIENT_URL || 'http://localhost:3000';
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
@@ -129,6 +134,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               </Link>
             );
           })}
+          <a
+            href={CLIENT_SITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all text-primary-100 hover:bg-primary-600 hover:text-white border-t border-primary-600 mt-2 pt-4"
+          >
+            <ExternalLink className="mr-3 h-5 w-5 flex-shrink-0 text-primary-100" />
+            Xem giao diện khách hàng
+          </a>
         </nav>
       </div>
 
@@ -185,6 +199,21 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               </Link>
             );
           })}
+          <a
+            href={CLIENT_SITE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={sidebarCollapsed ? 'Xem giao diện khách hàng' : undefined}
+            className="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all text-primary-100 hover:bg-primary-600 hover:text-white border-t border-primary-600 mt-2 pt-4"
+          >
+            <ExternalLink
+              className={cn(
+                "h-5 w-5 flex-shrink-0 text-primary-100",
+                sidebarCollapsed ? "mx-auto" : "mr-3"
+              )}
+            />
+            {!sidebarCollapsed && 'Xem giao diện khách hàng'}
+          </a>
         </nav>
       </div>
 

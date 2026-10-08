@@ -31,7 +31,7 @@ const getTourBySlug = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy tour');
   }
-  res.json(tour);
+  res.json({ data: tour });
 });
 
 // GET /api/tours/:id
@@ -41,7 +41,7 @@ const getTourById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy tour');
   }
-  res.json(tour);
+  res.json({ data: tour });
 });
 
 // POST /api/tours
@@ -51,7 +51,7 @@ const createTour = asyncHandler(async (req, res) => {
     body.slug = slugify(body.name, { lower: true, locale: 'vi' });
   }
   const tour = await Tour.create(body);
-  res.status(201).json(tour);
+  res.status(201).json({ data: tour });
 });
 
 // PUT /api/tours/:id
@@ -61,7 +61,7 @@ const updateTour = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy tour');
   }
-  res.json(tour);
+  res.json({ data: tour });
 });
 
 // DELETE /api/tours/:id
@@ -71,7 +71,7 @@ const deleteTour = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy tour');
   }
-  res.json({ message: 'Đã xoá tour' });
+  res.json({ data: { message: 'Đã xoá tour' } });
 });
 
 // GET /api/tours/:id/slots
@@ -81,7 +81,7 @@ const getTourSlots = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy tour');
   }
-  res.json(tour.slots || []);
+  res.json({ data: tour.slots || [] });
 });
 
 // POST /api/tours/:id/slots
@@ -93,7 +93,7 @@ const addTourSlot = asyncHandler(async (req, res) => {
   }
   tour.slots.push(req.body);
   await tour.save();
-  res.status(201).json(tour.slots);
+  res.status(201).json({ data: tour.slots });
 });
 
 module.exports = {
