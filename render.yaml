@@ -1,0 +1,64 @@
+# Blueprint triển khai backend lên Render (đặt ở thư mục GỐC của repo, ngang hàng megatrip-backend)
+services:
+  - type: web
+    name: megatrip-api
+    runtime: node
+    plan: free
+    rootDir: megatrip-backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES
+        value: 7d
+      - key: JWT_REFRESH_EXPIRES
+        value: 30d
+      - key: CORS_ORIGIN
+        value: https://megatrip-pha-megatrip-client.vercel.app,https://megatrip-pha-ra2g.vercel.app
+      - key: CLIENT_URL
+        value: https://megatrip-pha-megatrip-client.vercel.app
+      # ---- Điền tay trên giao diện Render (sync:false = không lưu giá trị trong file này) ----
+      - key: MONGO_URI
+        sync: false
+      - key: API_PUBLIC_URL
+        value: https://megatrip-pha-backend.onrender.com
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: VNPAY_TMN_CODE
+        sync: false
+      - key: VNPAY_HASH_SECRET
+        sync: false
+      - key: MOMO_PARTNER_CODE
+        sync: false
+      - key: MOMO_ACCESS_KEY
+        sync: false
+      - key: MOMO_SECRET_KEY
+        sync: false
+      - key: MOMO_IPN_URL
+        value: https://megatrip-pha-backend.onrender.com/momo/ipn
+      - key: ZALOPAY_APP_ID
+        sync: false
+      - key: ZALOPAY_KEY1
+        sync: false
+      - key: ZALOPAY_KEY2
+        sync: false
+      - key: ZALOPAY_CALLBACK_URL
+        value: https://megatrip-pha-backend.onrender.com/zalo/callback

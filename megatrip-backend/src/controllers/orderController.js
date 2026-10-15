@@ -2,6 +2,23 @@ const asyncHandler = require('express-async-handler');
 const { nanoid } = require('nanoid');
 const Order = require('../models/Order');
 
+const mongoose = require('mongoose');
+
+// Tìm đơn theo _id, orderNumber, hoặc mã dạng "MT123-1699999" (MoMo gắn thêm -requestId)
+const findOrderFlexible = async (key, populate) => {
+  if (!key) return null;
+  const run = (q) => (populate ? q.populate(populate.path, populate.select) : q);
+  if (mongoose.Types.ObjectId.isValid(key) && String(key).length === 24) {
+    const byId = await run(Order.findById(key));
+    if (byId) return byId;
+  }
+  let found = await run(Order.findOne({ orderNumber: key }));
+  if (!found && String(key).includes('-')) {
+    found = await run(Order.findOne({ orderNumber: String(key).split('-')[0] }));
+  }
+  return found;
+};
+
 const genOrderNumber = () => `MT${Date.now().toString().slice(-8)}${nanoid(4).toUpperCase()}`;
 
 // GET /api/orders
@@ -29,7 +46,7 @@ const listOrders = asyncHandler(async (req, res) => {
 
 // GET /api/orders/:id
 const getOrderById = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id);
+  const order = await findOrderFlexible(req.params.id);
   if (!order) {
     res.status(404);
     throw new Error('Không tìm thấy đơn hàng');
@@ -39,7 +56,7 @@ const getOrderById = asyncHandler(async (req, res) => {
 
 // GET /api/orders/:id/details  &  /api/orders/:id/client/details
 const getOrderDetails = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id).populate('customerId', 'name email phone');
+  const order = await findOrderFlexible(req.params.id, { path: 'customerId', select: 'name email phone' });
   if (!order) {
     res.status(404);
     throw new Error('Không tìm thấy đơn hàng');
@@ -145,6 +162,7 @@ const statsByCustomers = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  findOrderFlexible,
   listOrders,
   getOrderById,
   getOrderDetails,

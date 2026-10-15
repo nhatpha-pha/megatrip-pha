@@ -96,7 +96,18 @@ const addTourSlot = asyncHandler(async (req, res) => {
   res.status(201).json({ data: tour.slots });
 });
 
+// POST /api/tours/batch { slugs: [...] } -> mảng tour đúng thứ tự (null nếu không có)
+const getToursBatch = asyncHandler(async (req, res) => {
+  const { slugs } = req.body;
+  if (!Array.isArray(slugs) || !slugs.length) return res.json({ data: [] });
+  const tours = await Tour.find({ slug: { $in: slugs } });
+  const bySlug = {};
+  tours.forEach((t) => { bySlug[t.slug] = t; });
+  res.json({ data: slugs.map((x) => bySlug[x] || null) });
+});
+
 module.exports = {
+  getToursBatch,
   listTours,
   getTourBySlug,
   getTourById,

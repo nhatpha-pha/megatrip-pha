@@ -84,4 +84,28 @@ router.post('/momo/ipn', ctrl.momoIpn);
 router.post('/zalo/payment', ctrl.zalopayCreatePayment);
 router.post('/zalo/callback', ctrl.zalopayCallback);
 
+/**
+ * @swagger
+ * /momo/refund:
+ *   post:
+ *     tags: [Payments]
+ *     summary: "[Admin] Hoàn tiền qua MoMo"
+ *     security: []
+ *     responses:
+ *       200: { description: Kết quả hoàn tiền từ MoMo }
+ */
+router.post('/momo/refund', ctrl.momoRefund);
+
+/**
+ * @swagger
+ * /zalo/refund:
+ *   post:
+ *     tags: [Payments]
+ *     summary: "[Admin] Hoàn tiền qua ZaloPay"
+ *     security: []
+ *     responses:
+ *       200: { description: Kết quả hoàn tiền từ ZaloPay }
+ */
+router.post('/zalo/refund', ctrl.zalopayRefund);
+
 module.exports = router;

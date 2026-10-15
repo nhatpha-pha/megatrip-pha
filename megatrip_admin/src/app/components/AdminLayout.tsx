@@ -61,7 +61,7 @@ const navigation = [
 
 // Trang khách hàng (megatrip-client) là app Next.js riêng, chạy ở cổng khác —
 // đặt NEXT_PUBLIC_CLIENT_URL trong .env.local nếu cổng của bạn khác 3000.
-const CLIENT_SITE_URL = process.env.NEXT_PUBLIC_CLIENT_URL || 'http://localhost:3000';
+const CLIENT_SITE_URL = process.env.NEXT_PUBLIC_CLIENT_URL || 'https://megatrip-pha-megatrip-client.vercel.app';
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();

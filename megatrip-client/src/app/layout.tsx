@@ -1,5 +1,7 @@
 "use client";
 
+import "./lib/attachAuthFetch";
+
 import { useEffect } from "react";
 import { startLoading, stopLoading } from "../app/lib/nprogress";
 import { ReactNode, useState } from "react";

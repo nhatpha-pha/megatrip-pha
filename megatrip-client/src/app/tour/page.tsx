@@ -312,7 +312,7 @@ function mapDbTourToList(db: any) {
     const [tourPromotions, setTourPromotions] = useState<any[]>([]);
     const [tourPromotionsLoading, setTourPromotionsLoading] = useState(false);
     const [tourPromotionsError, setTourPromotionsError] = useState<string | null>(null);
-    const PROM_API_BASE = 'http://localhost:8080';
+    const PROM_API_BASE = (process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080');
 
     useEffect(() => {
         let mounted = true;
@@ -357,7 +357,7 @@ function mapDbTourToList(db: any) {
     // Generate additional tours for selected destination
     // state for API tours
     const [apiTours, setApiTours] = useState<any[]>([]);
-    const API_BASE_TOUR = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
+    const API_BASE_TOUR = process.env.NEXT_PUBLIC_API_BASE || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080";
     const [fetchAttempted, setFetchAttempted] = useState(false);
     const [fetchError, setFetchError] = useState<string | null>(null);
     // Define fetchTours function at component level

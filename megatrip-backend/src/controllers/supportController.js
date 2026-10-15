@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Ticket = require('../models/Ticket');
+const { sendMail } = require('../utils/mailer');
 
 // GET /api/support
 const listTickets = asyncHandler(async (req, res) => {
@@ -54,17 +55,33 @@ const deleteTicket = asyncHandler(async (req, res) => {
   res.json({ data: { message: 'Đã xoá yêu cầu hỗ trợ' } });
 });
 
-// POST /api/tickets/:id/responses  (thêm phản hồi vào ticket)
+// POST /api/support/:id/messages  (payload admin gửi: { text, authorType, authorId })
 const addTicketResponse = asyncHandler(async (req, res) => {
   const ticket = await Ticket.findById(req.params.id);
-  if (!ticket) {
-    res.status(404);
-    throw new Error('Không tìm thấy yêu cầu hỗ trợ');
-  }
-  ticket.responses.push(req.body);
+  if (!ticket) { res.status(404); throw new Error('Không tìm thấy yêu cầu hỗ trợ'); }
+  const { text, content, authorType, authorId, authorName, isInternal } = req.body;
+  ticket.responses.push({
+    content: text || content || '',
+    authorType: authorType || 'customer',
+    authorId, authorName, isInternal: !!isInternal,
+  });
   if (ticket.status === 'new') ticket.status = 'open';
   await ticket.save();
-  res.status(201).json({ data: ticket });
+  res.status(201).json({ data: ticket, message: 'Đã gửi phản hồi' });
 });
 
-module.exports = { listTickets, getTicketById, createTicket, updateTicket, deleteTicket, addTicketResponse };
+// POST /api/support/send-response-email  { ticketId, email, responseDetails }
+const sendResponseEmail = asyncHandler(async (req, res) => {
+  const { ticketId, email, responseDetails } = req.body;
+  if (!email) { res.status(400); throw new Error('Thiếu địa chỉ email người nhận'); }
+  const ticket = ticketId ? await Ticket.findById(ticketId) : null;
+  const bodyText = typeof responseDetails === 'string' ? responseDetails : JSON.stringify(responseDetails || {}, null, 2);
+  await sendMail({
+    to: email,
+    subject: `MegaTrip - Phản hồi yêu cầu hỗ trợ${ticket ? ': ' + ticket.title : ''}`,
+    html: `<p>${bodyText.replace(/\n/g, '<br/>')}</p>`,
+  });
+  res.json({ data: { message: 'Đã gửi email phản hồi' } });
+});
+
+module.exports = { listTickets, getTicketById, createTicket, updateTicket, deleteTicket, addTicketResponse, sendResponseEmail };

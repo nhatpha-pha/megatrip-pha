@@ -14,7 +14,7 @@ export function setAccessToken(token: string | null) {
 }
 
 const axiosAuth = axios.create({
-    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:8080',
+    baseURL: process.env.NEXT_PUBLIC_API_BASE || process.env.REACT_APP_API_URL || 'http://localhost:8080',
     paramsSerializer: (params) => queryString.stringify(params),
     timeout: 15000,
 });

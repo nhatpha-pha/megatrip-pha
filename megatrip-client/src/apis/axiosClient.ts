@@ -5,7 +5,7 @@ import queryString from "query-string";
 import { toast } from "sonner";
 
 const axiosClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
+  baseURL: process.env.NEXT_PUBLIC_API_BASE || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080",
   paramsSerializer: (params) => queryString.stringify(params),
   timeout: 15000,
 });

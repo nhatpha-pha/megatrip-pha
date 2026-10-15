@@ -24,7 +24,7 @@ import queryString from 'query-string';
  */
 
 const axiosClient = axios.create({
-    baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001', // base url server, ưu tiên biến môi trường
+    baseURL: process.env.NEXT_PUBLIC_API_BASE || process.env.REACT_APP_API_URL || 'http://localhost:8080', // base url server, ưu tiên biến môi trường
     paramsSerializer: (params) => queryString.stringify(params),
     timeout: 15000, // 15 giây, tránh treo request
 });

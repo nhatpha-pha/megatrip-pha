@@ -7,7 +7,7 @@ const listBuses = asyncHandler(async (req, res) => {
   const filter = {};
   if (from) filter['routeFrom.code'] = from;
   if (to) filter['routeTo.code'] = to;
-  if (status) filter.status = status;
+  if (status) filter.status = status === 'scheduled' ? 'active' : status; // 'scheduled' (client) ~ 'active'
   const total = await Bus.countDocuments(filter);
   const buses = await Bus.find(filter)
     .sort({ createdAt: -1 })

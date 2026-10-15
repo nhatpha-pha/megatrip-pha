@@ -37,7 +37,7 @@ export async function resetPassword(payload: ResetPayload) {
 
 export async function updateProfile(payload: UpdateProfilePayload) {
     // Use direct URL since this API is on different port
-    return axios.put('http://localhost:8080/api/auth/me', payload, {
+    return axios.put(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/api/auth/me`, payload, {
         headers: {
             Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('accessToken') : ''}`,
             'Content-Type': 'application/json',

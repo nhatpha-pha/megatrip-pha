@@ -10,7 +10,10 @@ const options = {
         'API cho MegaTrip (megatrip-client + megatrip_admin). Tất cả response JSON đều bọc trong { data: ... } (trừ error).',
     },
     servers: [
-      { url: 'http://localhost:' + (process.env.PORT || 8080), description: 'Local server' },
+      {
+        url: process.env.API_PUBLIC_URL || 'http://localhost:' + (process.env.PORT || 8080),
+        description: process.env.API_PUBLIC_URL ? 'Production server' : 'Local server',
+      },
     ],
     components: {
       securitySchemes: {
@@ -105,6 +108,8 @@ const options = {
       { name: 'Support', description: 'Yêu cầu hỗ trợ / ticket' },
       { name: 'News', description: 'Tin tức (admin)' },
       { name: 'Stats', description: 'Thống kê dashboard admin' },
+      { name: 'Upload', description: 'Upload ảnh lên Cloudinary' },
+      { name: 'Tickets', description: 'Vé máy bay đã đặt' },
       { name: 'Payments', description: 'VNPay / MoMo / ZaloPay' },
     ],
   },

@@ -623,7 +623,7 @@ export default function ChiTietVeMayBay() {
                 }
 
                 // Fetch tickets: chỉ lấy flight tickets với status paid/changed
-                const response = await fetch('http://localhost:8080/api/tickets?type=flight&status=paid&status=changed');
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/api/tickets?type=flight&status=paid&status=changed`);
                 if (!response.ok) return;
                 const { data: tickets } = await response.json();
 

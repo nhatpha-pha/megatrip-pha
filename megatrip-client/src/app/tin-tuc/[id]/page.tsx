@@ -119,7 +119,7 @@ export default function ChiTietTinTuc() {
         (async () => {
             try {
                 // fetch article by id (id can be _id or slug)
-                const r = await fetch(`http://localhost:8080/api/admin/news/${id}`);
+                const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/api/admin/news/${id}`);
                 if (!r.ok) {
                     setArticle(null);
                     setRelated([]);
@@ -154,7 +154,7 @@ export default function ChiTietTinTuc() {
 
                 // fetch related: try same category, excluding current id
                 const q = encodeURIComponent("");
-                const relRes = await fetch(`http://localhost:8080/api/admin/news?page=1&limit=6&status=published&category=${normalized.category}`);
+                const relRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/api/admin/news?page=1&limit=6&status=published&category=${normalized.category}`);
                 if (!relRes.ok) {
                     setRelated([]);
                     setLoading(false);

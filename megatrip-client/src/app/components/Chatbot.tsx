@@ -31,7 +31,7 @@ const Chatbot = () => {
 
     // useEffect để fetch userName từ API nếu đã đăng nhập
     useEffect(() => {
-        const token = localStorage.getItem('token')  // Giả sử key lưu token là 'token'
+        const token = (localStorage.getItem('accessToken') || localStorage.getItem('token'))  // Giả sử key lưu token là 'token'
         if (token) {
             const fetchUserName = async () => {
                 try {
@@ -77,8 +77,8 @@ const Chatbot = () => {
             const lowerInput = input.toLowerCase()
 
             const [tourRes, busRes] = await Promise.all([
-                fetch('http://localhost:8080/api/tours'),
-                fetch('http://localhost:8080/api/buses/client/buses?page=1&pageSize=50&status=scheduled')
+                fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/api/tours`),
+                fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/api/buses/client/buses?page=1&pageSize=50&status=scheduled`)
             ])
 
             const rawTours = (await tourRes.json()).data || []

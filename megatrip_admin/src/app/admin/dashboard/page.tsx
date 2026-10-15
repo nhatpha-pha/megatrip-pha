@@ -153,7 +153,7 @@ export default function Dashboard() {
                 const { start, end } = getDateRange(dateRange);
 
                 // Fetch dashboard stats
-                const dashboardRes = await fetch(`http://localhost:8080/api/stats/dashboard?start=${start}&end=${end}`);
+                const dashboardRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/api/stats/dashboard?start=${start}&end=${end}`);
                 const dashboardData = await dashboardRes.json();
 
                 // Tính KPI từ dashboardData
@@ -194,7 +194,7 @@ export default function Dashboard() {
                 setKpiData(newKpiData);
 
                 // Fetch revenue stats
-                const revenueRes = await fetch(`http://localhost:8080/api/stats/revenue?start=${start}&end=${end}`);
+                const revenueRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/api/stats/revenue?start=${start}&end=${end}`);
                 const revenueStats = await revenueRes.json();
                 setRevenueData(revenueStats.revenueOverTime || []);
                 setServiceDistribution(revenueStats.revenueByType?.map((item: any) => ({
@@ -204,7 +204,7 @@ export default function Dashboard() {
                 })) || []);
 
                 // Fetch product stats
-                const productRes = await fetch(`http://localhost:8080/api/stats/products?start=${start}&end=${end}`);
+                const productRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/api/stats/products?start=${start}&end=${end}`);
                 const productStats = await productRes.json();
                 setTopServices(productStats.topBookedProducts?.slice(0, 5).map((item: any) => ({
                     id: item._id,
@@ -217,7 +217,7 @@ export default function Dashboard() {
                 })) || []);
 
                 // Fetch activities
-                const activitiesRes = await fetch(`http://localhost:8080/api/stats/activities?start=${start}&end=${end}`);
+                const activitiesRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/api/stats/activities?start=${start}&end=${end}`);
                 const activitiesData = await activitiesRes.json();
                 setRecentActivities(activitiesData.activities || []);
 

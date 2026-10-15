@@ -30,6 +30,18 @@ const { protect, adminOnly } = require('../middleware/auth');
  *       201: { description: Đã tạo }
  */
 router.get('/', ctrl.listBuses);
+
+/**
+ * @swagger
+ * /api/buses/client/buses:
+ *   get:
+ *     tags: [Buses]
+ *     summary: Danh sách chuyến xe cho phía client/chatbot (status=scheduled coi như active)
+ *     security: []
+ *     responses:
+ *       200: { description: Danh sách chuyến xe }
+ */
+router.get('/client/buses', ctrl.listBuses);
 router.post('/', protect, adminOnly, ctrl.createBus);
 
 /**

@@ -711,7 +711,7 @@ export default function DoiLichPage() {
             return;
         }
 
-        const PAYMENT_BASE = process.env.NEXT_PUBLIC_PAYMENT_BASE || 'http://localhost:8080';
+        const PAYMENT_BASE = process.env.NEXT_PUBLIC_PAYMENT_BASE || process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
         const ORDERS_API = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
 
         try {
@@ -948,7 +948,7 @@ export default function DoiLichPage() {
             }
             try {
                 // Fetch tickets: chỉ lấy flight tickets với status paid/changed (đồng bộ với ChiTietMayBay)
-                const response = await fetch('http://localhost:8080/api/tickets?type=flight&status=paid&status=changed');
+                const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/api/tickets?type=flight&status=paid&status=changed`);
                 if (!response.ok) return;
                 const { data: tickets } = await response.json();
 

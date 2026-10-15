@@ -16,13 +16,26 @@ const ticketRoutes = require('./routes/ticketRoutes');
 const newsRoutes = require('./routes/newsRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const statsRoutes = require('./routes/statsRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 const app = express();
 
-const corsOrigins = (process.env.CORS_ORIGIN || '*').split(',').map((s) => s.trim());
+// CORS_ORIGIN: danh sách domain frontend, cách nhau bởi dấu phẩy. Hỗ trợ "*" và wildcard "*.vercel.app".
+const corsOrigins = (process.env.CORS_ORIGIN || '*')
+  .split(',')
+  .map((s) => s.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // gọi server-to-server, Postman, Swagger cùng domain...
+  if (corsOrigins.includes('*')) return true;
+  let host = '';
+  try { host = new URL(origin).hostname; } catch (e) { return false; }
+  return corsOrigins.some((o) => (o.startsWith('*.') ? host.endsWith(o.slice(1)) : o === origin));
+};
+app.set('trust proxy', 1); // chạy sau proxy của Render/Railway
 app.use(
   cors({
-    origin: corsOrigins.includes('*') ? true : corsOrigins,
+    origin: (origin, cb) => cb(null, isOriginAllowed(origin)),
     credentials: true,
   })
 );
@@ -54,6 +67,7 @@ app.use('/api/support', supportRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/admin/news', newsRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use('/api/news', newsRoutes); // alias public
 
 // Payment: mount cả ở root (khớp code hiện tại của frontend) lẫn dưới /api/payments

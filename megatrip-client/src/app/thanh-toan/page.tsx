@@ -1590,7 +1590,7 @@ function ThanhToan() {
     try {
       if (selectedPayment === "vnpay") {
         const resp = await fetch(
-          "http://localhost:8080/vnpay/create_payment_url",
+          `${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/vnpay/create_payment_url`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1633,7 +1633,7 @@ function ThanhToan() {
       }
 
       if (selectedPayment === "zalopay") {
-        const resp = await fetch("http://localhost:8080/zalo/payment", {
+        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/zalo/payment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -1666,7 +1666,7 @@ function ThanhToan() {
       }
 
       if (selectedPayment === "momo") {
-        const resp = await fetch("http://localhost:8080/momo/payment", {
+        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/momo/payment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

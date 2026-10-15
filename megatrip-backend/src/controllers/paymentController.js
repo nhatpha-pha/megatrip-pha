@@ -3,6 +3,9 @@ const crypto = require('crypto');
 const qs = require('qs');
 const axios = require('axios');
 const Order = require('../models/Order');
+const { findOrderFlexible } = require('./orderController');
+
+const CLIENT_URL = () => (process.env.CLIENT_URL || 'http://localhost:3000').replace(/\/$/, '');
 
 // ================= VNPAY =================
 // Docs: https://sandbox.vnpayment.vn/apis/docs/thanh-toan-pay/pay.html
@@ -17,7 +20,7 @@ function sortObject(obj) {
 
 // POST /api/payments/vnpay/create_payment_url  { orderId, amount, orderInfo, bankCode? }
 const vnpayCreatePaymentUrl = asyncHandler(async (req, res) => {
-  const { orderId, amount, orderInfo = 'Thanh toan don hang MegaTrip', bankCode, ipAddr } = req.body;
+  const { orderId, amount, orderInfo = 'Thanh toan don hang MegaTrip', bankCode, ipAddr, returnUrl: clientReturnUrl } = req.body;
   if (!amount) {
     res.status(400);
     throw new Error('Thiếu số tiền thanh toán (amount)');
@@ -26,7 +29,7 @@ const vnpayCreatePaymentUrl = asyncHandler(async (req, res) => {
   const tmnCode = process.env.VNPAY_TMN_CODE;
   const secretKey = process.env.VNPAY_HASH_SECRET;
   const vnpUrl = process.env.VNPAY_URL;
-  const returnUrl = process.env.VNPAY_RETURN_URL;
+  const returnUrl = clientReturnUrl || process.env.VNPAY_RETURN_URL;
 
   const date = new Date();
   const createDate = date
@@ -61,25 +64,24 @@ const vnpayCreatePaymentUrl = asyncHandler(async (req, res) => {
   res.json({ paymentUrl, txnRef });
 });
 
-// GET /api/payments/vnpay/return  &  /vnpay/check-payment  (VNPay redirect về kèm query string)
+// GET /vnpay/check-payment | /vnpay/return  (VNPay redirect trình duyệt về đây)
 const vnpayReturn = asyncHandler(async (req, res) => {
-  const vnp_Params = { ...req.query };
-  const secureHash = vnp_Params.vnp_SecureHash;
-  delete vnp_Params.vnp_SecureHash;
-  delete vnp_Params.vnp_SecureHashType;
+  // Chỉ lấy các tham số vnp_* để ký (orderNumber do mình tự gắn thêm vào returnUrl, không nằm trong chữ ký)
+  const vnp_Params = {};
+  Object.keys(req.query).forEach((k) => {
+    if (k.startsWith('vnp_') && k !== 'vnp_SecureHash' && k !== 'vnp_SecureHashType') vnp_Params[k] = req.query[k];
+  });
+  const secureHash = req.query.vnp_SecureHash;
 
-  const sorted = sortObject(vnp_Params);
-  const signData = qs.stringify(sorted, { encode: false });
-  const hmac = crypto.createHmac('sha512', process.env.VNPAY_HASH_SECRET);
-  const checkSum = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
-
+  const signData = qs.stringify(sortObject(vnp_Params), { encode: false });
+  const checkSum = crypto.createHmac('sha512', process.env.VNPAY_HASH_SECRET).update(Buffer.from(signData, 'utf-8')).digest('hex');
   const isValid = checkSum === secureHash;
   const isSuccess = isValid && vnp_Params.vnp_ResponseCode === '00';
 
-  // Cập nhật đơn hàng nếu có orderNumber trong query (?orderNumber=...)
-  const { orderNumber } = req.query;
+  const orderNumber = req.query.orderNumber || String(vnp_Params.vnp_TxnRef || '').split('-')[0];
+  let order = null;
   if (orderNumber) {
-    const order = await Order.findOne({ orderNumber });
+    order = await findOrderFlexible(orderNumber);
     if (order) {
       order.paymentStatus = isSuccess ? 'paid' : 'failed';
       order.timeline.push({
@@ -92,6 +94,13 @@ const vnpayReturn = asyncHandler(async (req, res) => {
     }
   }
 
+  // Đưa người dùng quay lại website (nếu gọi từ trình duyệt)
+  if (req.accepts(['html', 'json']) === 'html') {
+    const ref = encodeURIComponent((order && order.orderNumber) || orderNumber || '');
+    return res.redirect(
+      isSuccess ? `${CLIENT_URL()}/thanh-toan-thanh-cong?orderId=${ref}` : `${CLIENT_URL()}/thanh-toan?payment=failed&orderId=${ref}`
+    );
+  }
   res.json({ isValid, isSuccess, data: vnp_Params });
 });
 
@@ -107,7 +116,7 @@ const momoCreatePayment = asyncHandler(async (req, res) => {
   const partnerCode = process.env.MOMO_PARTNER_CODE;
   const accessKey = process.env.MOMO_ACCESS_KEY;
   const secretKey = process.env.MOMO_SECRET_KEY;
-  const redirectUrl = process.env.MOMO_REDIRECT_URL;
+  const redirectUrl = process.env.MOMO_REDIRECT_URL || `${CLIENT_URL()}/thanh-toan-thanh-cong`;
   const ipnUrl = process.env.MOMO_IPN_URL;
   const requestId = `${Date.now()}`;
   const momoOrderId = `${orderId || 'MT'}-${requestId}`;
@@ -144,9 +153,8 @@ const momoCreatePayment = asyncHandler(async (req, res) => {
 // POST /api/payments/momo/ipn  (MoMo gọi ngược về server để báo kết quả)
 const momoIpn = asyncHandler(async (req, res) => {
   const { orderId, resultCode } = req.body;
-  const orderNumber = orderId?.split('-')[0];
-  if (orderNumber) {
-    const order = await Order.findOne({ orderNumber });
+  if (orderId) {
+    const order = await findOrderFlexible(orderId);
     if (order) {
       order.paymentStatus = resultCode === 0 ? 'paid' : 'failed';
       order.timeline.push({
@@ -164,7 +172,7 @@ const momoIpn = asyncHandler(async (req, res) => {
 // ================= ZALOPAY =================
 // Docs: https://docs.zalopay.vn/v2/general/overview.html
 const zalopayCreatePayment = asyncHandler(async (req, res) => {
-  const { orderId, amount, orderInfo = 'Thanh toan don hang MegaTrip' } = req.body;
+  const { orderId, amount, description, orderInfo, app_user } = req.body;
   if (!amount) {
     res.status(400);
     throw new Error('Thiếu số tiền thanh toán (amount)');
@@ -180,12 +188,12 @@ const zalopayCreatePayment = asyncHandler(async (req, res) => {
   const order = {
     app_id: appId,
     app_trans_id: appTransId,
-    app_user: orderId || 'megatrip_user',
+    app_user: app_user || orderId || 'megatrip_user',
     app_time: Date.now(),
     item: JSON.stringify([{ orderId }]),
-    embed_data: JSON.stringify({ redirecturl: process.env.ZALOPAY_CALLBACK_URL }),
+    embed_data: JSON.stringify({ redirecturl: `${CLIENT_URL()}/thanh-toan-thanh-cong?orderId=${encodeURIComponent(orderId || '')}`, orderNumber: orderId }),
     amount: Math.round(amount),
-    description: orderInfo,
+    description: description || orderInfo || 'Thanh toan don hang MegaTrip',
     bank_code: '',
     callback_url: process.env.ZALOPAY_CALLBACK_URL,
   };
@@ -216,7 +224,7 @@ const zalopayCallback = asyncHandler(async (req, res) => {
     const items = JSON.parse(data.item || '[]');
     const orderId = items[0]?.orderId;
     if (orderId) {
-      const order = await Order.findOne({ orderNumber: orderId });
+      const order = await findOrderFlexible(orderId);
       if (order) {
         order.paymentStatus = 'paid';
         order.timeline.push({ status: order.orderStatus, note: 'Thanh toán ZaloPay thành công', actor: 'zalopay', timestamp: new Date() });
@@ -229,6 +237,60 @@ const zalopayCallback = asyncHandler(async (req, res) => {
   }
 });
 
+// ================= REFUND =================
+// POST /momo/refund  { orderId, amount, transId, description }
+const momoRefund = asyncHandler(async (req, res) => {
+  const { orderId, amount, transId, description = 'Hoan tien don hang MegaTrip' } = req.body;
+  if (!orderId || !amount || !transId) {
+    res.status(400);
+    throw new Error('Thiếu orderId / amount / transId');
+  }
+  const partnerCode = process.env.MOMO_PARTNER_CODE;
+  const accessKey = process.env.MOMO_ACCESS_KEY;
+  const secretKey = process.env.MOMO_SECRET_KEY;
+  const requestId = `${Date.now()}`;
+  const raw = `accessKey=${accessKey}&amount=${amount}&description=${description}&orderId=${orderId}&partnerCode=${partnerCode}&requestId=${requestId}&transId=${transId}`;
+  const signature = crypto.createHmac('sha256', secretKey).update(raw).digest('hex');
+  try {
+    const endpoint = process.env.MOMO_REFUND_ENDPOINT || 'https://test-payment.momo.vn/v2/gateway/api/refund';
+    const { data } = await axios.post(endpoint, {
+      partnerCode, orderId, requestId, amount: Number(amount), transId: Number(transId), lang: 'vi', description, signature,
+    });
+    res.json(data);
+  } catch (err) {
+    res.status(502);
+    throw new Error('Không gọi được MoMo refund: ' + (err.response?.data?.message || err.message));
+  }
+});
+
+// POST /zalo/refund  { zp_trans_id, amount, description }
+const zalopayRefund = asyncHandler(async (req, res) => {
+  const { zp_trans_id, amount, description = 'Hoan tien don hang MegaTrip' } = req.body;
+  if (!zp_trans_id || !amount) {
+    res.status(400);
+    throw new Error('Thiếu zp_trans_id / amount');
+  }
+  const appId = process.env.ZALOPAY_APP_ID;
+  const key1 = process.env.ZALOPAY_KEY1;
+  const timestamp = Date.now();
+  const now = new Date();
+  const yymmdd = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const m_refund_id = `${yymmdd}_${appId}_${timestamp}${Math.floor(Math.random() * 1000)}`;
+  const params = { app_id: appId, m_refund_id, timestamp, zp_trans_id, amount: Math.round(amount), description };
+  const data = `${params.app_id}|${params.zp_trans_id}|${params.amount}|${params.description}|${params.timestamp}`;
+  params.mac = crypto.createHmac('sha256', key1).update(data).digest('hex');
+  try {
+    const endpoint = process.env.ZALOPAY_REFUND_ENDPOINT || 'https://sb-openapi.zalopay.vn/v2/refund';
+    const result = await axios.post(endpoint, qs.stringify(params), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    res.json(result.data);
+  } catch (err) {
+    res.status(502);
+    throw new Error('Không gọi được ZaloPay refund: ' + (err.response?.data?.return_message || err.message));
+  }
+});
+
 module.exports = {
   vnpayCreatePaymentUrl,
   vnpayReturn,
@@ -236,4 +298,6 @@ module.exports = {
   momoIpn,
   zalopayCreatePayment,
   zalopayCallback,
+  momoRefund,
+  zalopayRefund,
 };
