@@ -28,6 +28,16 @@ services:
         sync: false
       - key: API_PUBLIC_URL
         value: https://megatrip-pha-backend.onrender.com
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: AMADEUS_BASE_URL
+        value: https://test.api.amadeus.com
+      - key: AMADEUS_CLIENT_ID
+        sync: false
+      - key: AMADEUS_CLIENT_SECRET
+        sync: false
       - key: ADMIN_EMAIL
         sync: false
       - key: ADMIN_PASSWORD

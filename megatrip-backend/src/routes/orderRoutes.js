@@ -33,7 +33,7 @@ const { protect, adminOnly } = require('../middleware/auth');
  *       201: { description: Đã tạo đơn hàng }
  */
 router.get('/', protect, adminOnly, ctrl.listOrders);
-router.post('/', ctrl.createOrder);
+router.post('/', protect, ctrl.createOrder);
 
 /**
  * @swagger

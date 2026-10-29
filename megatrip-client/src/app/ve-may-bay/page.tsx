@@ -520,7 +520,6 @@ function VeMayBay() {
             aircraft,
             price: priceNumeric,
             currency,
-            originalPrice: priceNumeric + 300000,
             class: cabinText || 'ECONOMY',
             baggage: {
                 handbag,
@@ -615,20 +614,6 @@ function VeMayBay() {
         setOutboundFlights([]);
         setInboundFlights([]);
         try {
-            // get token once and reuse for both legs
-            const tokenRes = await fetch('https://test.api.amadeus.com/v1/security/oauth2/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({
-                    grant_type: 'client_credentials',
-                    client_id: process.env.NEXT_PUBLIC_AMADEUS_CLIENT_ID || '',
-                    client_secret: process.env.NEXT_PUBLIC_AMADEUS_CLIENT_SECRET || ''
-                })
-            });
-            const tokenJson = await tokenRes.json();
-            const token = tokenJson.access_token;
-            if (!token) throw new Error('No token from Amadeus');
-
             const legs: { origin: string; destination: string; departureDate: string | undefined }[] = [
                 { origin, destination, departureDate: departure }
             ];
@@ -670,10 +655,10 @@ function VeMayBay() {
                 params.set('nonStop', q['nonStop'] || 'true');
                 params.set('max', q['max'] || '5');
 
-                const offersRes = await fetch(`https://test.api.amadeus.com/v2/shopping/flight-offers?${params.toString()}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const apiBase = (process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080').replace(/\/$/, '');
+                const offersRes = await fetch(`${apiBase}/api/flights/search?${params.toString()}`);
                 const offersJson = await offersRes.json();
+                if (!offersRes.ok) throw new Error(offersJson.message || 'Không thể tra cứu chuyến bay');
                 const dicts = offersJson.dictionaries || {};
                 const data = offersJson.data || [];
                 const mapped = data.map((o: any, i: number) => mapOfferToFlight(o, dicts, i));

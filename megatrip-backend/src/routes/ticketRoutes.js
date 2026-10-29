@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/flightTicketController');
+const { protect, adminOnly } = require('../middleware/auth');
 
 /**
  * @swagger
@@ -21,7 +22,7 @@ const ctrl = require('../controllers/flightTicketController');
  *     responses:
  *       200: { description: Danh sách vé }
  */
-router.get('/', ctrl.listTickets);
+router.get('/', protect, ctrl.listTickets);
 
 /**
  * @swagger
@@ -38,6 +39,6 @@ router.get('/', ctrl.listTickets);
  *     responses:
  *       200: { description: Chi tiết vé }
  */
-router.get('/:id', ctrl.getTicketById);
+router.get('/:id', protect, ctrl.getTicketById);
 
 module.exports = router;

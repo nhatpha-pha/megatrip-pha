@@ -6,6 +6,25 @@ const Order = require('../models/Order');
 const { findOrderFlexible } = require('./orderController');
 
 const CLIENT_URL = () => (process.env.CLIENT_URL || 'http://localhost:3000').replace(/\/$/, '');
+const isStaff = (user) => user && ['admin', 'staff'].includes(user.role);
+const safeEqual = (a, b) => {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const aa = Buffer.from(a, 'utf8'), bb = Buffer.from(b, 'utf8');
+  return aa.length === bb.length && crypto.timingSafeEqual(aa, bb);
+};
+const getAuthorizedOrder = async (req, key) => {
+  if (!key) { const e = new Error('Thiếu mã đơn hàng'); e.status = 400; throw e; }
+  const order = await findOrderFlexible(key);
+  if (!order) { const e = new Error('Không tìm thấy đơn hàng'); e.status = 404; throw e; }
+  if (!isStaff(req.user) && String(order.customerId || '') !== String(req.user?._id || '')) {
+    const e = new Error('Bạn không có quyền thanh toán đơn hàng này'); e.status = 403; throw e;
+  }
+  if (['paid', 'refunded'].includes(order.paymentStatus)) {
+    const e = new Error('Đơn hàng đã được thanh toán hoặc hoàn tiền'); e.status = 409; throw e;
+  }
+  return order;
+};
+
 
 // ================= VNPAY =================
 // Docs: https://sandbox.vnpayment.vn/apis/docs/thanh-toan-pay/pay.html
@@ -20,16 +39,15 @@ function sortObject(obj) {
 
 // POST /api/payments/vnpay/create_payment_url  { orderId, amount, orderInfo, bankCode? }
 const vnpayCreatePaymentUrl = asyncHandler(async (req, res) => {
-  const { orderId, amount, orderInfo = 'Thanh toan don hang MegaTrip', bankCode, ipAddr, returnUrl: clientReturnUrl } = req.body;
-  if (!amount) {
-    res.status(400);
-    throw new Error('Thiếu số tiền thanh toán (amount)');
-  }
+  const { orderId, orderInfo = 'Thanh toan don hang MegaTrip', bankCode, ipAddr } = req.body;
+  const order = await getAuthorizedOrder(req, orderId);
+  const amount = Math.round(Number(order.total));
+  if (!Number.isFinite(amount) || amount <= 0) { res.status(400); throw new Error('Số tiền đơn hàng không hợp lệ'); }
 
   const tmnCode = process.env.VNPAY_TMN_CODE;
   const secretKey = process.env.VNPAY_HASH_SECRET;
   const vnpUrl = process.env.VNPAY_URL;
-  const returnUrl = clientReturnUrl || process.env.VNPAY_RETURN_URL;
+  const returnUrl = process.env.VNPAY_RETURN_URL;
 
   const date = new Date();
   const createDate = date
@@ -75,7 +93,7 @@ const vnpayReturn = asyncHandler(async (req, res) => {
 
   const signData = qs.stringify(sortObject(vnp_Params), { encode: false });
   const checkSum = crypto.createHmac('sha512', process.env.VNPAY_HASH_SECRET).update(Buffer.from(signData, 'utf-8')).digest('hex');
-  const isValid = checkSum === secureHash;
+  const isValid = safeEqual(checkSum, secureHash);
   const isSuccess = isValid && vnp_Params.vnp_ResponseCode === '00';
 
   const orderNumber = req.query.orderNumber || String(vnp_Params.vnp_TxnRef || '').split('-')[0];
@@ -107,11 +125,10 @@ const vnpayReturn = asyncHandler(async (req, res) => {
 // ================= MOMO =================
 // Docs: https://developers.momo.vn/v3/docs/payment/api/wallet/onetime
 const momoCreatePayment = asyncHandler(async (req, res) => {
-  const { orderId, amount, orderInfo = 'Thanh toan don hang MegaTrip' } = req.body;
-  if (!amount) {
-    res.status(400);
-    throw new Error('Thiếu số tiền thanh toán (amount)');
-  }
+  const { orderId, orderInfo = 'Thanh toan don hang MegaTrip' } = req.body;
+  const order = await getAuthorizedOrder(req, orderId);
+  const amount = Math.round(Number(order.total));
+  if (!Number.isFinite(amount) || amount <= 0) { res.status(400); throw new Error('Số tiền đơn hàng không hợp lệ'); }
 
   const partnerCode = process.env.MOMO_PARTNER_CODE;
   const accessKey = process.env.MOMO_ACCESS_KEY;
@@ -152,19 +169,32 @@ const momoCreatePayment = asyncHandler(async (req, res) => {
 
 // POST /api/payments/momo/ipn  (MoMo gọi ngược về server để báo kết quả)
 const momoIpn = asyncHandler(async (req, res) => {
-  const { orderId, resultCode } = req.body;
-  if (orderId) {
-    const order = await findOrderFlexible(orderId);
-    if (order) {
-      order.paymentStatus = resultCode === 0 ? 'paid' : 'failed';
-      order.timeline.push({
-        status: order.orderStatus,
-        note: resultCode === 0 ? 'Thanh toán MoMo thành công' : 'Thanh toán MoMo thất bại',
-        actor: 'momo',
-        timestamp: new Date(),
-      });
+  const body = req.body || {};
+  const secretKey = process.env.MOMO_SECRET_KEY;
+  const accessKey = process.env.MOMO_ACCESS_KEY;
+  if (!secretKey || !accessKey) return res.status(503).json({ message: 'MoMo IPN chưa được cấu hình' });
+  const rawSignature = [
+    `accessKey=${accessKey}`, `amount=${body.amount}`, `extraData=${body.extraData || ''}`,
+    `message=${body.message || ''}`, `orderId=${body.orderId}`, `orderInfo=${body.orderInfo || ''}`,
+    `orderType=${body.orderType || ''}`, `partnerCode=${body.partnerCode}`, `payType=${body.payType || ''}`,
+    `requestId=${body.requestId}`, `responseTime=${body.responseTime}`, `resultCode=${body.resultCode}`,
+    `transId=${body.transId}`,
+  ].join('&');
+  const expected = crypto.createHmac('sha256', secretKey).update(rawSignature).digest('hex');
+  if (!safeEqual(expected, body.signature)) return res.status(400).json({ message: 'Chữ ký MoMo không hợp lệ' });
+  const order = await findOrderFlexible(body.orderId);
+  if (!order) return res.status(404).json({ message: 'Không tìm thấy đơn hàng tương ứng' });
+  if (Number(body.amount) !== Math.round(Number(order.total))) return res.status(400).json({ message: 'Số tiền IPN không khớp đơn hàng' });
+  if (body.resultCode === 0 || body.resultCode === '0') {
+    if (order.paymentStatus !== 'paid') {
+      order.paymentStatus = 'paid';
+      order.timeline.push({ status: order.orderStatus, note: 'Thanh toán MoMo thành công (IPN đã xác minh chữ ký)', actor: 'momo', timestamp: new Date() });
       await order.save();
     }
+  } else if (order.paymentStatus !== 'paid') {
+    order.paymentStatus = 'failed';
+    order.timeline.push({ status: order.orderStatus, note: 'Thanh toán MoMo thất bại', actor: 'momo', timestamp: new Date() });
+    await order.save();
   }
   res.status(204).end();
 });
@@ -172,11 +202,10 @@ const momoIpn = asyncHandler(async (req, res) => {
 // ================= ZALOPAY =================
 // Docs: https://docs.zalopay.vn/v2/general/overview.html
 const zalopayCreatePayment = asyncHandler(async (req, res) => {
-  const { orderId, amount, description, orderInfo, app_user } = req.body;
-  if (!amount) {
-    res.status(400);
-    throw new Error('Thiếu số tiền thanh toán (amount)');
-  }
+  const { orderId, description, orderInfo, app_user } = req.body;
+  const orderRecord = await getAuthorizedOrder(req, orderId);
+  const amount = Math.round(Number(orderRecord.total));
+  if (!Number.isFinite(amount) || amount <= 0) { res.status(400); throw new Error('Số tiền đơn hàng không hợp lệ'); }
   const appId = process.env.ZALOPAY_APP_ID;
   const key1 = process.env.ZALOPAY_KEY1;
   const transID = Math.floor(Math.random() * 1000000);
@@ -216,7 +245,7 @@ const zalopayCallback = asyncHandler(async (req, res) => {
   const { data: dataStr, mac: reqMac } = req.body;
   const computedMac = crypto.createHmac('sha256', key2).update(dataStr).digest('hex');
 
-  if (reqMac !== computedMac) {
+  if (!safeEqual(reqMac, computedMac)) {
     return res.json({ return_code: -1, return_message: 'mac not equal' });
   }
   try {
@@ -240,11 +269,12 @@ const zalopayCallback = asyncHandler(async (req, res) => {
 // ================= REFUND =================
 // POST /momo/refund  { orderId, amount, transId, description }
 const momoRefund = asyncHandler(async (req, res) => {
-  const { orderId, amount, transId, description = 'Hoan tien don hang MegaTrip' } = req.body;
-  if (!orderId || !amount || !transId) {
-    res.status(400);
-    throw new Error('Thiếu orderId / amount / transId');
-  }
+  const { orderId, transId, description = 'Hoan tien don hang MegaTrip' } = req.body;
+  if (!orderId || !transId) { res.status(400); throw new Error('Thiếu orderId / transId'); }
+  const order = await findOrderFlexible(orderId);
+  if (!order || order.paymentStatus !== 'paid') { res.status(400); throw new Error('Chỉ được hoàn tiền đơn đã thanh toán'); }
+  const amount = Math.round(Number(order.total));
+  if (!Number.isFinite(amount) || amount <= 0) { res.status(400); throw new Error('Số tiền hoàn không hợp lệ'); }
   const partnerCode = process.env.MOMO_PARTNER_CODE;
   const accessKey = process.env.MOMO_ACCESS_KEY;
   const secretKey = process.env.MOMO_SECRET_KEY;
@@ -265,11 +295,12 @@ const momoRefund = asyncHandler(async (req, res) => {
 
 // POST /zalo/refund  { zp_trans_id, amount, description }
 const zalopayRefund = asyncHandler(async (req, res) => {
-  const { zp_trans_id, amount, description = 'Hoan tien don hang MegaTrip' } = req.body;
-  if (!zp_trans_id || !amount) {
-    res.status(400);
-    throw new Error('Thiếu zp_trans_id / amount');
-  }
+  const { zp_trans_id, orderId, description = 'Hoan tien don hang MegaTrip' } = req.body;
+  if (!zp_trans_id || !orderId) { res.status(400); throw new Error('Thiếu zp_trans_id / orderId'); }
+  const orderRecord = await findOrderFlexible(orderId);
+  if (!orderRecord || orderRecord.paymentStatus !== 'paid') { res.status(400); throw new Error('Chỉ được hoàn tiền đơn đã thanh toán'); }
+  const amount = Math.round(Number(orderRecord.total));
+  if (!Number.isFinite(amount) || amount <= 0) { res.status(400); throw new Error('Số tiền hoàn không hợp lệ'); }
   const appId = process.env.ZALOPAY_APP_ID;
   const key1 = process.env.ZALOPAY_KEY1;
   const timestamp = Date.now();

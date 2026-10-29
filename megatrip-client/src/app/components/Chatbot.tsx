@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { Button } from './ui/button'
 import { Card, CardContent } from './ui/card'
 import { MessageCircle, X, Send } from 'lucide-react'
@@ -17,9 +16,6 @@ const Chatbot = () => {
     const [input, setInput] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
-
-    const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -475,9 +471,16 @@ Dữ liệu JSON:
 ${JSON.stringify(payload)}
 Câu hỏi user: "${input}"
 `
-            const result = await model.generateContent(aiPrompt)
+            const apiBase = (process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080').replace(/\/$/, '')
+            const aiRes = await fetch(`${apiBase}/api/ai/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: aiPrompt }),
+            })
+            const aiJson = await aiRes.json()
+            if (!aiRes.ok) throw new Error(aiJson.message || 'Không thể gọi trợ lý AI')
             // Build a deterministic, well-formed reply from payload to avoid broken/malformed links
-            const aiText = result.response.text().trim()
+            const aiText = String(aiJson.text || '').trim()
             const toursList = payload.tours || []
             const busesList = payload.buses || []
 

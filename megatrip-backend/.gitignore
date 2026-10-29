@@ -1,3 +1,9 @@
 node_modules
 .env
 *.log
+
+# Local MongoDB dumps / private backups
+*.bson
+*.metadata.json
+/dump/
+/megatrip/

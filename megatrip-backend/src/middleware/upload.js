@@ -5,7 +5,7 @@ const multer = require('multer');
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  if (!file.mimetype.startsWith('image/')) {
+  const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);\n  if (!allowed.has(file.mimetype)) {
     return cb(new Error('Chỉ chấp nhận file ảnh (jpg, png, webp...)'));
   }
   cb(null, true);

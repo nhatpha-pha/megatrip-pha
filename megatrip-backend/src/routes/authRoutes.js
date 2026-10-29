@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/authController');
 const { protect, adminOnly } = require('../middleware/auth');
+const { rateLimit } = require('../middleware/security');
+const authLimiter = rateLimit({ windowMs: 60 * 1000, max: 10 });
+const loginLimiter = rateLimit({ windowMs: 60 * 1000, max: 8, message: 'Quá nhiều lần thử đăng nhập, vui lòng chờ một phút.' });
+const otpLimiter = rateLimit({ windowMs: 60 * 1000, max: 6, message: 'Quá nhiều lần thử OTP, vui lòng chờ một phút.' });
 
 /**
  * @swagger
@@ -24,7 +28,7 @@ const { protect, adminOnly } = require('../middleware/auth');
  *       201: { description: Đăng ký thành công }
  *       400: { description: Email đã tồn tại }
  */
-router.post('/register', ctrl.register);
+router.post('/register', authLimiter, ctrl.register);
 
 /**
  * @swagger
@@ -46,7 +50,7 @@ router.post('/register', ctrl.register);
  *     responses:
  *       200: { description: Xác thực thành công }
  */
-router.post('/verify-otp', ctrl.verifyOtp);
+router.post('/verify-otp', otpLimiter, ctrl.verifyOtp);
 
 /**
  * @swagger
@@ -65,7 +69,7 @@ router.post('/verify-otp', ctrl.verifyOtp);
  *     responses:
  *       200: { description: Đã gửi lại OTP }
  */
-router.post('/resend-otp', ctrl.resendOtp);
+router.post('/resend-otp', authLimiter, ctrl.resendOtp);
 
 /**
  * @swagger
@@ -100,7 +104,7 @@ router.post('/resend-otp', ctrl.resendOtp);
  *                     user: { $ref: '#/components/schemas/User' }
  *       401: { description: Sai email hoặc mật khẩu }
  */
-router.post('/login', ctrl.login);
+router.post('/login', loginLimiter, ctrl.login);
 
 /**
  * @swagger
@@ -119,7 +123,7 @@ router.post('/login', ctrl.login);
  *     responses:
  *       200: { description: Đã gửi hướng dẫn (nếu email tồn tại) }
  */
-router.post('/forgot-password', ctrl.forgotPassword);
+router.post('/forgot-password', authLimiter, ctrl.forgotPassword);
 
 /**
  * @swagger
@@ -141,7 +145,7 @@ router.post('/forgot-password', ctrl.forgotPassword);
  *     responses:
  *       200: { description: Đặt lại mật khẩu thành công }
  */
-router.post('/reset-password', ctrl.resetPassword);
+router.post('/reset-password', authLimiter, ctrl.resetPassword);
 
 /**
  * @swagger

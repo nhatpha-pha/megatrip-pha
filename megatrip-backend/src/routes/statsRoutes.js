@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/statsController');
+const { protect, adminOnly } = require('../middleware/auth');
 /**
  * @swagger
  * /api/stats/dashboard:
@@ -17,7 +18,7 @@ const ctrl = require('../controllers/statsController');
  *     responses:
  *       200: { description: Thống kê tổng quan (trả thẳng, không bọc trong data) }
  */
-router.get('/dashboard', ctrl.getDashboardStats);
+router.get('/dashboard', protect, adminOnly, ctrl.getDashboardStats);
 
 /**
  * @swagger
@@ -35,7 +36,7 @@ router.get('/dashboard', ctrl.getDashboardStats);
  *     responses:
  *       200: { description: revenueOverTime + revenueByType }
  */
-router.get('/revenue', ctrl.getRevenueStats);
+router.get('/revenue', protect, adminOnly, ctrl.getRevenueStats);
 
 /**
  * @swagger
@@ -53,7 +54,7 @@ router.get('/revenue', ctrl.getRevenueStats);
  *     responses:
  *       200: { description: topBookedProducts }
  */
-router.get('/products', ctrl.getProductStats);
+router.get('/products', protect, adminOnly, ctrl.getProductStats);
 
 /**
  * @swagger
@@ -71,6 +72,6 @@ router.get('/products', ctrl.getProductStats);
  *     responses:
  *       200: { description: Danh sách hoạt động gần đây }
  */
-router.get('/activities', ctrl.getActivities);
+router.get('/activities', protect, adminOnly, ctrl.getActivities);
 
 module.exports = router;

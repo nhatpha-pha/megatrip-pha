@@ -1,0 +1,50 @@
+name: MegaTrip CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: megatrip-backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: megatrip-backend/package-lock.json
+      - run: npm ci
+      - run: node --check src/app.js
+      - run: node --check src/controllers/orderController.js
+      - run: node --check src/controllers/paymentController.js
+  client:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: megatrip-client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: megatrip-client/package-lock.json
+      - run: npm ci
+      - run: npm run build
+  admin:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: megatrip_admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: megatrip_admin/package-lock.json
+      - run: npm ci
+      - run: npm run build
