@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/flightTicketController');
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, optionalAuth } = require('../middleware/auth');
 
 /**
  * @swagger
@@ -22,15 +22,14 @@ const { protect, adminOnly } = require('../middleware/auth');
  *     responses:
  *       200: { description: Danh sách vé }
  */
-router.get('/', protect, ctrl.listTickets);
+router.get('/', optionalAuth, ctrl.listTickets);
 
 /**
  * @swagger
  * /api/tickets/{id}:
  *   get:
  *     tags: [Tickets]
- *     summary: Chi tiết 1 vé máy bay
- *     security: []
+ *     summary: Chi tiết 1 vé máy bay (chủ vé hoặc admin)
  *     parameters:
  *       - in: path
  *         name: id

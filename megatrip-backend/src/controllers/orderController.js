@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const { nanoid } = require('nanoid');
 const Order = require('../models/Order');
+const { isStaff, canAccessOrder } = require('../middleware/auth');
 
 const mongoose = require('mongoose');
 
@@ -18,10 +19,6 @@ const findOrderFlexible = async (key, populate) => {
   }
   return found;
 };
-
-const isStaff = (user) => user && ['admin', 'staff'].includes(user.role);
-const canAccessOrder = (user, order) => isStaff(user) || (user && order.customerId && String(order.customerId) === String(user._id));
-const assertOrderAccess = (req, order) => { if (!canAccessOrder(req.user, order)) { const e = new Error('Bạn không có quyền truy cập đơn hàng này'); e.status = 403; throw e; } };
 
 const genOrderNumber = () => `MT${Date.now().toString().slice(-8)}${nanoid(4).toUpperCase()}`;
 
@@ -55,7 +52,10 @@ const getOrderById = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy đơn hàng');
   }
-  assertOrderAccess(req, order);
+  if (!canAccessOrder(req.user, order)) {
+    res.status(403);
+    throw new Error('Bạn không có quyền truy cập đơn hàng này');
+  }
   res.json({ data: order });
 });
 
@@ -66,14 +66,20 @@ const getOrderDetails = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy đơn hàng');
   }
-  assertOrderAccess(req, order);
+  if (!canAccessOrder(req.user, order)) {
+    res.status(403);
+    throw new Error('Bạn không có quyền truy cập đơn hàng này');
+  }
   res.json({ data: order });
 });
 
 // GET /api/orders/customer/:customerId
 const getOrdersByCustomer = asyncHandler(async (req, res) => {
   const { page = 1, pageSize = 50 } = req.query;
-  if (!isStaff(req.user) && String(req.user._id) !== String(req.params.customerId)) { res.status(403); throw new Error('Bạn không có quyền xem đơn hàng của khách khác'); }
+  if (!isStaff(req.user) && String(req.params.customerId) !== String(req.user._id)) {
+    res.status(403);
+    throw new Error('Bạn chỉ được xem đơn hàng của chính mình');
+  }
   const filter = { customerId: req.params.customerId };
   const total = await Order.countDocuments(filter);
   const orders = await Order.find(filter)
@@ -83,22 +89,51 @@ const getOrdersByCustomer = asyncHandler(async (req, res) => {
   res.json({ data: orders, pagination: { total, current: Number(page), pageSize: Number(pageSize) } });
 });
 
-// POST /api/orders
+// POST /api/orders  (khách vãng lai hoặc đã đăng nhập; route dùng optionalAuth)
 const createOrder = asyncHandler(async (req, res) => {
-  const body = req.body;
-  const subtotal = (body.items || []).reduce((sum, it) => sum + (it.subtotal || it.unitPrice * it.quantity || 0), 0);
-  const discountAmount = body.discount?.amount || 0;
-  const tax = body.tax || 0;
-  const total = body.total ?? subtotal - discountAmount + tax;
+  const staff = isStaff(req.user);
+  // Không tin các trường nhạy cảm do client gửi lên
+  const { _id, id, timeline, notes, changeCalendar, dateChangeCalendar, ...body } = req.body || {};
 
-  const order = await Order.create({
+  const items = Array.isArray(body.items) ? body.items : [];
+  if (items.length === 0) {
+    res.status(400);
+    throw new Error('Đơn hàng phải có ít nhất 1 mục');
+  }
+  for (const it of items) {
+    const qty = Number(it.quantity ?? 1);
+    const price = Number(it.unitPrice ?? 0);
+    if (!Number.isFinite(qty) || qty < 1 || !Number.isFinite(price) || price < 0) {
+      res.status(400);
+      throw new Error('Số lượng hoặc đơn giá không hợp lệ');
+    }
+  }
+
+  const subtotal = items.reduce((sum, it) => sum + (it.subtotal || it.unitPrice * it.quantity || 0), 0);
+  const discountAmount = Math.min(Math.max(Number(body.discount?.amount) || 0, 0), subtotal);
+  const tax = Math.max(Number(body.tax) || 0, 0);
+  const total = Number(body.total ?? subtotal - discountAmount + tax);
+  if (!Number.isFinite(total) || total < 0) {
+    res.status(400);
+    throw new Error('Tổng tiền không hợp lệ');
+  }
+
+  const data = {
     ...body,
-    customerId: req.user._id,
     orderNumber: body.orderNumber || genOrderNumber(),
     subtotal,
     total,
     timeline: [{ status: 'pending', note: 'Đơn hàng được tạo', actor: body.customerName || 'system', timestamp: new Date() }],
-  });
+  };
+  if (!staff) {
+    // Khách không được tự đặt trạng thái thanh toán/đơn hàng, và đơn luôn gắn với tài khoản đang đăng nhập
+    data.paymentStatus = 'pending';
+    data.orderStatus = 'pending';
+    if (req.user) data.customerId = req.user._id;
+    else delete data.customerId;
+  }
+
+  const order = await Order.create(data);
   res.status(201).json({ data: order });
 });
 
@@ -109,23 +144,13 @@ const updateOrder = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy đơn hàng');
   }
-  assertOrderAccess(req, order);
   const prevStatus = order.orderStatus;
-  if (isStaff(req.user)) {
-    const allowed = ['orderStatus', 'paymentStatus', 'notes', 'customerName', 'customerEmail', 'customerPhone', 'customerAddress', 'changeCalendar', 'dateChangeCalendar'];
-    for (const key of allowed) if (req.body[key] !== undefined) order[key] = req.body[key];
-  } else if (req.body.dateChangeCalendar !== undefined) {
-    order.changeCalendar = true;
-    order.dateChangeCalendar = String(req.body.dateChangeCalendar).slice(0, 100);
-  } else {
-    res.status(403);
-    throw new Error('Khách hàng chỉ được gửi yêu cầu đổi lịch');
-  }
-  if (isStaff(req.user) && req.body.orderStatus && req.body.orderStatus !== prevStatus) {
+  Object.assign(order, req.body);
+  if (req.body.orderStatus && req.body.orderStatus !== prevStatus) {
     order.timeline.push({
       status: req.body.orderStatus,
-      note: typeof req.body.note === 'string' ? req.body.note.slice(0, 500) : `Chuyển trạng thái sang ${req.body.orderStatus}`,
-      actor: req.user.role,
+      note: req.body.note || `Chuyển trạng thái sang ${req.body.orderStatus}`,
+      actor: req.body.actor || 'admin',
       timestamp: new Date(),
     });
   }
@@ -150,7 +175,10 @@ const changeOrderCalendar = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy đơn hàng');
   }
-  assertOrderAccess(req, order);
+  if (!canAccessOrder(req.user, order)) {
+    res.status(403);
+    throw new Error('Bạn không có quyền truy cập đơn hàng này');
+  }
   order.changeCalendar = true;
   order.dateChangeCalendar = req.body.dateChangeCalendar;
   order.timeline.push({

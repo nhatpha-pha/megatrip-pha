@@ -27,6 +27,31 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 });
 
+// Giống protect nhưng KHÔNG bắt buộc đăng nhập: có token hợp lệ thì gắn req.user, không thì bỏ qua.
+const optionalAuth = async (req, res, next) => {
+  try {
+    const header = req.headers.authorization;
+    if (header && header.startsWith('Bearer ')) {
+      const decoded = jwt.verify(header.split(' ')[1], process.env.JWT_ACCESS_SECRET);
+      const user = await User.findById(decoded.id);
+      if (user && user.status !== 'blocked') req.user = user;
+    }
+  } catch (e) {
+    /* token sai/hết hạn -> coi như khách vãng lai */
+  }
+  next();
+};
+
+const isStaff = (user) => !!user && (user.role === 'admin' || user.role === 'staff');
+
+// Admin/staff xem được mọi đơn; khách chỉ xem được đơn của chính mình (customerId trùng).
+const canAccessOrder = (user, order) => {
+  if (!user || !order) return false;
+  if (isStaff(user)) return true;
+  const owner = order.customerId && (order.customerId._id || order.customerId);
+  return !!owner && String(owner) === String(user._id);
+};
+
 const adminOnly = (req, res, next) => {
   if (req.user && (req.user.role === 'admin' || req.user.role === 'staff')) {
     return next();
@@ -35,4 +60,4 @@ const adminOnly = (req, res, next) => {
   throw new Error('Chỉ admin mới được phép thực hiện thao tác này');
 };
 
-module.exports = { protect, adminOnly };
+module.exports = { protect, adminOnly, optionalAuth, isStaff, canAccessOrder };

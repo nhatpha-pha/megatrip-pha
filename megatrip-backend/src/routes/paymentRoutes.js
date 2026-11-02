@@ -24,7 +24,7 @@ const { protect, adminOnly } = require('../middleware/auth');
  *     responses:
  *       200: { description: Trả về paymentUrl để redirect người dùng }
  */
-router.post('/vnpay/create_payment_url', protect, ctrl.vnpayCreatePaymentUrl);
+router.post('/vnpay/create_payment_url', ctrl.vnpayCreatePaymentUrl);
 
 /**
  * @swagger
@@ -59,7 +59,7 @@ router.get('/vnpay/return', ctrl.vnpayReturn);
  *     responses:
  *       200: { description: Trả về link thanh toán MoMo }
  */
-router.post('/momo/payment', protect, ctrl.momoCreatePayment);
+router.post('/momo/payment', ctrl.momoCreatePayment);
 router.post('/momo/ipn', ctrl.momoIpn);
 
 /**
@@ -82,7 +82,7 @@ router.post('/momo/ipn', ctrl.momoIpn);
  *     responses:
  *       200: { description: Trả về link thanh toán ZaloPay }
  */
-router.post('/zalo/payment', protect, ctrl.zalopayCreatePayment);
+router.post('/zalo/payment', ctrl.zalopayCreatePayment);
 router.post('/zalo/callback', ctrl.zalopayCallback);
 
 /**
@@ -91,7 +91,6 @@ router.post('/zalo/callback', ctrl.zalopayCallback);
  *   post:
  *     tags: [Payments]
  *     summary: "[Admin] Hoàn tiền qua MoMo"
- *     security: []
  *     responses:
  *       200: { description: Kết quả hoàn tiền từ MoMo }
  */
@@ -103,7 +102,6 @@ router.post('/momo/refund', protect, adminOnly, ctrl.momoRefund);
  *   post:
  *     tags: [Payments]
  *     summary: "[Admin] Hoàn tiền qua ZaloPay"
- *     security: []
  *     responses:
  *       200: { description: Kết quả hoàn tiền từ ZaloPay }
  */

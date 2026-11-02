@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/statsController');
 const { protect, adminOnly } = require('../middleware/auth');
+
+// Toàn bộ thống kê chỉ dành cho admin/staff
+router.use(protect, adminOnly);
+
 /**
  * @swagger
  * /api/stats/dashboard:
@@ -18,7 +22,7 @@ const { protect, adminOnly } = require('../middleware/auth');
  *     responses:
  *       200: { description: Thống kê tổng quan (trả thẳng, không bọc trong data) }
  */
-router.get('/dashboard', protect, adminOnly, ctrl.getDashboardStats);
+router.get('/dashboard', ctrl.getDashboardStats);
 
 /**
  * @swagger
@@ -36,7 +40,7 @@ router.get('/dashboard', protect, adminOnly, ctrl.getDashboardStats);
  *     responses:
  *       200: { description: revenueOverTime + revenueByType }
  */
-router.get('/revenue', protect, adminOnly, ctrl.getRevenueStats);
+router.get('/revenue', ctrl.getRevenueStats);
 
 /**
  * @swagger
@@ -54,7 +58,7 @@ router.get('/revenue', protect, adminOnly, ctrl.getRevenueStats);
  *     responses:
  *       200: { description: topBookedProducts }
  */
-router.get('/products', protect, adminOnly, ctrl.getProductStats);
+router.get('/products', ctrl.getProductStats);
 
 /**
  * @swagger
@@ -72,6 +76,6 @@ router.get('/products', protect, adminOnly, ctrl.getProductStats);
  *     responses:
  *       200: { description: Danh sách hoạt động gần đây }
  */
-router.get('/activities', protect, adminOnly, ctrl.getActivities);
+router.get('/activities', ctrl.getActivities);
 
 module.exports = router;

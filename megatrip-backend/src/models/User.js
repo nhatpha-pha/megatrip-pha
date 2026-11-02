@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     otpCode: { type: String, select: false },
     otpExpires: { type: Date, select: false },
+    otpAttempts: { type: Number, default: 0, select: false },
     resetToken: { type: String, select: false },
     resetTokenExpires: { type: Date, select: false },
     status: { type: String, enum: ['active', 'blocked'], default: 'active' },
@@ -29,6 +30,7 @@ userSchema.set('toJSON', {
     delete ret.password;
     delete ret.otpCode;
     delete ret.otpExpires;
+    delete ret.otpAttempts;
     delete ret.resetToken;
     delete ret.resetTokenExpires;
     return ret;

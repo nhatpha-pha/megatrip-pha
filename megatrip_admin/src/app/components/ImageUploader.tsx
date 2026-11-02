@@ -87,6 +87,8 @@ export function ImageUploader({
 
         const xhr = new XMLHttpRequest();
         xhr.open("POST", `${API_BASE}/api/upload`, true);
+        const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+        if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
 
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/orderController');
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, adminOnly, optionalAuth } = require('../middleware/auth');
 
 /**
  * @swagger
@@ -33,7 +33,7 @@ const { protect, adminOnly } = require('../middleware/auth');
  *       201: { description: Đã tạo đơn hàng }
  */
 router.get('/', protect, adminOnly, ctrl.listOrders);
-router.post('/', protect, ctrl.createOrder);
+router.post('/', optionalAuth, ctrl.createOrder);
 
 /**
  * @swagger
@@ -137,7 +137,7 @@ router.put('/:id/change-calendar', protect, ctrl.changeOrderCalendar);
  *       200: { description: Đã xoá }
  */
 router.get('/:id', protect, ctrl.getOrderById);
-router.put('/:id', protect, ctrl.updateOrder);
+router.put('/:id', protect, adminOnly, ctrl.updateOrder); // chỉ admin/staff được đổi trạng thái đơn
 router.delete('/:id', protect, adminOnly, ctrl.deleteOrder);
 
 module.exports = router;

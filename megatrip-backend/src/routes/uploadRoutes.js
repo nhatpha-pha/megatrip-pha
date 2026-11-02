@@ -1,16 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const upload = require('../middleware/upload');
-const { uploadImages } = require('../controllers/uploadController');
 const { protect, adminOnly } = require('../middleware/auth');
+const { uploadImages } = require('../controllers/uploadController');
 
 /**
  * @swagger
  * /api/upload:
  *   post:
  *     tags: [Upload]
- *     summary: Upload ảnh (lưu trên Cloudinary, trả về URL)
- *     security: []
+ *     summary: "[Admin] Upload ảnh (lưu trên Cloudinary, trả về URL)"
  *     requestBody:
  *       required: true
  *       content:

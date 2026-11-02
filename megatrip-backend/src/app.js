@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const morgan = require('morgan');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
@@ -35,6 +36,8 @@ const isOriginAllowed = (origin) => {
   return corsOrigins.some((o) => (o.startsWith('*.') ? host.endsWith(o.slice(1)) : o === origin));
 };
 app.set('trust proxy', 1); // chạy sau proxy của Render/Railway
+// Header bảo mật; cho phép site khác (Vercel) tải tài nguyên/API cross-origin
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' }, contentSecurityPolicy: false }));
 app.use(
   cors({
     origin: (origin, cb) => cb(null, isOriginAllowed(origin)),

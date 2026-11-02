@@ -38,7 +38,7 @@ const register = asyncHandler(async (req, res) => {
 // @route POST /api/auth/verify-otp
 const verifyOtp = asyncHandler(async (req, res) => {
   const { email, code } = req.body;
-  const user = await User.findOne({ email: email?.toLowerCase() }).select('+otpCode +otpExpires');
+  const user = await User.findOne({ email: email?.toLowerCase() }).select('+otpCode +otpExpires +otpAttempts');
   if (!user) {
     res.status(404);
     throw new Error('Không tìm thấy tài khoản');
@@ -46,7 +46,17 @@ const verifyOtp = asyncHandler(async (req, res) => {
   if (user.isVerified) {
     return res.json({ data: { message: 'Tài khoản đã được xác thực trước đó' } });
   }
-  if (!user.otpCode || user.otpCode !== code || user.otpExpires < new Date()) {
+  if (!user.otpCode || user.otpCode !== String(code) || user.otpExpires < new Date()) {
+    // Mỗi mã OTP chỉ được thử tối đa 5 lần, sau đó phải yêu cầu gửi lại mã mới
+    if (user.otpCode) {
+      user.otpAttempts = (user.otpAttempts || 0) + 1;
+      if (user.otpAttempts >= 5) {
+        user.otpCode = undefined;
+        user.otpExpires = undefined;
+        user.otpAttempts = 0;
+      }
+      await user.save();
+    }
     res.status(400);
     throw new Error('Mã OTP không đúng hoặc đã hết hạn');
   }
@@ -70,6 +80,7 @@ const resendOtp = asyncHandler(async (req, res) => {
   }
   const otpCode = generateOtp();
   user.otpCode = otpCode;
+  user.otpAttempts = 0;
   user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
   await user.save();
   await sendMail({
