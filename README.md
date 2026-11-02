@@ -1,65 +1,67 @@
-# MegaTrip - Ứng dụng hoàn chỉnh (Full-stack)
+MegaTrip – Ứng dụng du lịch trực tuyến Full-stack
+MegaTrip được xây dựng theo mô hình Full-stack, bao gồm ba project hoạt động độc lập nhưng có sự liên kết với nhau thông qua hệ thống API. Các thành phần được phát triển bằng những công nghệ phù hợp với từng chức năng, giúp việc quản lý, phát triển và bảo trì hệ thống thuận tiện hơn.
+1. Cấu trúc hệ thống
+Hệ thống MegaTrip được chia thành ba thành phần chính:
+Thư mục	Chức năng	Cổng mặc định
+megatrip-backend	Xây dựng API backend bằng Node.js, Express và MongoDB	8080
+megatrip-client	Giao diện website dành cho khách hàng, phát triển bằng Next.js	3000
+megatrip_admin	Giao diện quản trị hệ thống, phát triển bằng Next.js	3001
 
-Gồm 3 project chạy độc lập, đã nối sẵn với nhau qua `http://localhost:8080`:
+Ba project được tổ chức riêng biệt nhằm phân chia rõ nhiệm vụ giữa xử lý dữ liệu, giao diện khách hàng và chức năng quản trị. Trong quá trình hoạt động, hai giao diện frontend gửi yêu cầu đến backend thông qua API tại địa chỉ http://localhost:8080.
+2. Hướng dẫn khởi chạy hệ thống
+Để hệ thống hoạt động ổn định trên môi trường local, cần khởi chạy lần lượt ba thành phần sau.
 
-| Thư mục | Vai trò | Cổng mặc định |
-|---|---|---|
-| `megatrip-backend` | API backend (Node.js + Express + MongoDB) | 8080 |
-| `megatrip-client` | Website khách hàng (Next.js) | 3000 |
-| `megatrip_admin` | Trang quản trị (Next.js) | 3001 (tự đổi nếu 3000 bận) |
+Bước 1. Khởi chạy Backend
 
-## Chạy nhanh (3 terminal)
-
-**1) Backend** — bắt buộc chạy trước tiên:
-```bash
-cd megatrip-backend
+Mở Terminal tại thư mục megatrip-backend và thực hiện:
 npm install
 cp .env.example .env
-# Mở .env, điền MONGO_URI (Mongo local hoặc Atlas), JWT secret, SMTP (gửi OTP),
-# và merchant key VNPay/MoMo/ZaloPay nếu cần thanh toán thật
-npm run seed      # tạo tài khoản admin đầu tiên
-npm run dev        # http://localhost:8080
-```
+npm run seed
+npm run dev
 
-**2) Website khách hàng**:
-```bash
-cd megatrip-client
+
+Backend sử dụng MongoDB để lưu trữ dữ liệu và cung cấp API cho hai ứng dụng frontend. Sau khi khởi chạy thành công, server hoạt động tại:
+
+http://localhost:8080
+
+Bước 2. Khởi chạy Website khách hàng
+
+Mở Terminal mới tại thư mục megatrip-client:
 npm install
-npm run dev        # http://localhost:3000 - .env.local đã trỏ sẵn về backend local
-```
+npm run dev
 
-**3) Trang quản trị**:
-```bash
-cd megatrip_admin
+
+Website khách hàng được truy cập tại:
+
+http://localhost:3000
+
+Giao diện này cung cấp các chức năng phục vụ người dùng trong quá trình tìm kiếm thông tin và sử dụng dịch vụ du lịch.
+
+Bước 3. Khởi chạy Trang quản trị
+
+Mở Terminal mới tại thư mục megatrip_admin:
 npm install
-npm run dev        # http://localhost:3001 - .env.local đã trỏ sẵn về backend local
-```
+npm run dev
 
-Đăng nhập admin bằng tài khoản mà `npm run seed` vừa tạo (mặc định trong `.env`:
-`ADMIN_EMAIL=admin@megatrip.vn`, `ADMIN_PASSWORD=Admin@123` — nên đổi lại trong `.env` trước khi seed).
 
-## Đã tự động xử lý sẵn
+Trang quản trị được truy cập tại:
 
-- Toàn bộ URL hardcode `megatripserver.onrender.com` và `demo-payment-nc15.onrender.com`
-  trong code của `megatrip-client` và `megatrip_admin` (khoảng 60 chỗ) đã được thay thành
-  `http://localhost:8080` — 2 frontend giờ gọi thẳng vào `megatrip-backend` ở trên, không còn
-  phụ thuộc server online nữa.
-- File `.env.local` đã tạo sẵn ở cả 2 frontend, trỏ đúng các biến `NEXT_PUBLIC_API_URL/API_BASE/API_BASE_URL/PAYMENT_BASE`.
+http://localhost:3001
 
-## Muốn deploy lên internet thay vì chạy local?
+Đây là khu vực dành cho quản trị viên thực hiện các thao tác quản lý và theo dõi hoạt động của hệ thống.
+3. Cấu hình kết nối giữa các thành phần
+Để đảm bảo hai ứng dụng frontend có thể trao đổi dữ liệu với backend, hệ thống sử dụng các biến môi trường để cấu hình địa chỉ API.
 
-Đổi các giá trị trong `.env.local` (2 frontend) và `VNPAY_RETURN_URL` / `MOMO_*` / `ZALOPAY_*`
-(trong `megatrip-backend/.env`) từ `localhost` sang domain thật, rồi build:
+Cụ thể, hai file .env.local trong thư mục megatrip-client và megatrip_admin được thiết lập để trỏ đến backend tại địa chỉ:
+http://localhost:8080
 
-```bash
-npm run build && npm start     # cho từng project Next.js
-```
 
-## Còn thiếu để chạy thật 100%
-
-- **Merchant key thanh toán thật** (VNPay/MoMo/ZaloPay) — cần bạn đăng ký tài khoản sandbox/production
-  ở từng cổng thanh toán rồi điền vào `megatrip-backend/.env`.
-- **Gemini API key** (chatbot AI) và **Amadeus key** (tìm chuyến bay) — điền vào `.env.local` của
-  `megatrip-client` nếu muốn 2 tính năng này hoạt động, không thì chúng sẽ báo lỗi khi bấm vào.
-- Dữ liệu (tours/buses/promotions...) hiện đang **trống** vì là database mới — vào trang admin để
-  thêm dữ liệu, hoặc yêu cầu mình viết thêm script seed dữ liệu mẫu.
+Nhờ đó, các yêu cầu từ website khách hàng và trang quản trị đều được gửi đến cùng một hệ thống backend. Backend tiếp nhận yêu cầu, xử lý nghiệp vụ, tương tác với cơ sở dữ liệu MongoDB và trả kết quả về giao diện tương ứng.
+4. Quy trình hoạt động tổng thể
+Quy trình trao đổi dữ liệu giữa các thành phần được thực hiện như sau:
+1. Người dùng truy cập website MegaTrip hoặc trang quản trị thông qua trình duyệt.
+2. Frontend tiếp nhận thao tác và gửi yêu cầu đến backend thông qua API.
+3. Backend kiểm tra, xử lý yêu cầu và thực hiện các nghiệp vụ tương ứng.
+4. Khi cần thiết, backend truy vấn hoặc cập nhật dữ liệu trong MongoDB.
+5. Kết quả xử lý được backend trả về frontend để hiển thị cho người dùng.
+Cách tổ chức này giúp hệ thống phân tách rõ phần giao diện và phần xử lý nghiệp vụ, đồng thời tạo điều kiện thuận lợi cho việc mở rộng và phát triển các chức năng trong tương lai.
