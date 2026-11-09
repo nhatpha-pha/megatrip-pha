@@ -23,6 +23,7 @@ const { protect, adminOnly } = require('../middleware/auth');
  *       201: { description: Đã tạo }
  */
 router.get('/', ctrl.listPromotions);
+router.post('/bulk', protect, adminOnly, ctrl.bulkPromotions); // admin: bật / tắt / xóa nhiều mã
 router.post('/', protect, adminOnly, ctrl.createPromotion);
 
 /**

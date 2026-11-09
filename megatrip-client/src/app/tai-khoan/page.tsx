@@ -476,7 +476,7 @@ function mapOrderToBooking(order: any) {
         status: order.orderStatus || order.status || 'pending',
         paymentStatus,
         bookingDate: order.createdAt ? new Date(order.createdAt).toISOString().slice(0, 10) : '',
-        serviceDate,
+        serviceDate: serviceDate ?? '',
         daysUntilService,
         title: item?.name || snap?.details?.route || 'Đặt dịch vụ',
         details: item ? `${item.name} • x${item.quantity}` : (snap?.details?.route || ''),
@@ -722,6 +722,7 @@ function TaiKhoan() {
     const [detailModalOpen, setDetailModalOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [orderDetails, setOrderDetails] = useState(null);
+    const [detailError, setDetailError] = useState<string | null>(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
 
     const [reviewOpen, setReviewOpen] = useState(false);
@@ -746,18 +747,48 @@ function TaiKhoan() {
 
     }
     // Function mở modal chi tiết
-    const openOrderDetail = async (orderId: string) => {
+    const openOrderDetail = async (orderId: string, fallbackId?: string) => {
         setLoadingDetails(true);
         setDetailModalOpen(true);
+        setDetailError(null);
+        setOrderDetails(null);
+        const base = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080';
+        // Thử _id (Mongo) trước, sau đó thử mã đơn (orderNumber)
+        const ids = [orderId, fallbackId].filter((v, i, a) => !!v && a.indexOf(v) === i) as string[];
+        let lastErr = 'Không rõ nguyên nhân';
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080'}/api/orders/${orderId}/client/details`);
-            if (!res.ok) throw new Error('Failed to load order details');
-            const data = await res.json();
-            setOrderDetails(data);
-            console.log('Loaded order details:', data);
-        } catch (err) {
+            for (const id of ids) {
+                const res = await fetch(`${base}/api/orders/${encodeURIComponent(id)}/client/details`);
+                let json: any = null;
+                try { json = await res.json(); } catch { /* không phải JSON */ }
+                console.log('[OrderDetail]', id, res.status, json);
+                if (!res.ok) {
+                    lastErr = `HTTP ${res.status}${json?.message ? ' - ' + json.message : ''}`;
+                    continue;
+                }
+                // Chấp nhận nhiều dạng phản hồi khác nhau
+                let candidate: any = null;
+                if (json?.order) {
+                    candidate = json;
+                } else if (json?.data?.order) {
+                    candidate = json.data;
+                } else if (json?.data && (json.data.orderNumber || json.data._id)) {
+                    candidate = { order: json.data, tickets: json.data.tickets ?? json.tickets ?? [], oldTickets: json.data.oldTickets ?? json.oldTickets ?? [] };
+                } else if (json && (json.orderNumber || json._id)) {
+                    candidate = { order: json, tickets: json.tickets ?? [], oldTickets: json.oldTickets ?? [] };
+                }
+                if (candidate) {
+                    setOrderDetails(candidate);
+                    return;
+                }
+                lastErr = 'Phản hồi không chứa dữ liệu đơn hàng';
+            }
+            setOrderDetails(null);
+            setDetailError(lastErr);
+        } catch (err: any) {
             console.error('Error loading order details:', err);
             setOrderDetails(null);
+            setDetailError(err?.message || 'Lỗi kết nối tới máy chủ');
         } finally {
             setLoadingDetails(false);
         }
@@ -828,7 +859,7 @@ function TaiKhoan() {
         // Fallback cho bus và các loại khác
         if (!ticket.travelStart) return "";
         try {
-            if (ticket.travelStart.includes('T')) {
+            if (String(ticket.travelStart).includes('T')) {
                 const dt = new Date(ticket.travelStart.replace('Z', ''));
                 if (!isNaN(dt.getTime())) {
                     return dt.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
@@ -855,7 +886,7 @@ function TaiKhoan() {
                                         <Avatar className="w-20 h-20 mx-auto mb-4">
                                             <AvatarImage src={userData.profile.avatar} />
                                             <AvatarFallback className="text-lg">
-                                                {userData.profile.name.split(' ').map(n => n[0]).join('')}
+                                                {(userData.profile.name || '').split(' ').filter(Boolean).map((n: string) => n[0]).join('')}
                                             </AvatarFallback>
                                         </Avatar>
                                         <h2 className="text-xl font-bold">{userData.profile.name}</h2>
@@ -1165,7 +1196,7 @@ function TaiKhoan() {
                                                                             <div>Ngày đặt: {booking.bookingDate}</div>
                                                                             {/* <div>Ngày sử dụng: {booking.serviceDate}</div> */}
                                                                             <div>
-                                                                                <strong>Ngày sử dụng:</strong> {booking.serviceDate.includes('T') ? booking.serviceDate.split('T')[0] : booking.serviceDate}
+                                                                                <strong>Ngày sử dụng:</strong> {booking.serviceDate ? String(booking.serviceDate).split('T')[0] : 'Chưa cập nhật'}
                                                                             </div>
 
                                                                             {/* <div>Số khách: {booking.passengers}</div> */}
@@ -1181,7 +1212,7 @@ function TaiKhoan() {
                                                                         {formatPrice(booking.total)}
                                                                     </div>
                                                                     <div className="flex flex-col gap-2">
-                                                                        <Button size="sm" variant="outline" onClick={() => openOrderDetail(booking.id)}>
+                                                                        <Button size="sm" variant="outline" onClick={() => openOrderDetail(booking.orderObjectId || booking.id, booking.id)}>
                                                                             <Eye className="h-3 w-3 mr-1" />
                                                                             Xem chi tiết
                                                                         </Button>
@@ -1211,6 +1242,7 @@ function TaiKhoan() {
                                                                                 </Tooltip.Provider>
                                                                             ) : (() => {
                                                                                 const serviceDateObj = new Date(booking.serviceDate);
+                                                                                if (isNaN(serviceDateObj.getTime())) return false;
                                                                                 const today = new Date();
                                                                                 const isPast = serviceDateObj.getFullYear() < today.getFullYear() ||
                                                                                     (serviceDateObj.getFullYear() === today.getFullYear() && serviceDateObj.getMonth() < today.getMonth()) ||
@@ -1499,18 +1531,18 @@ function TaiKhoan() {
                         <div className="p-4 space-y-4">
                             {loadingDetails ? (
                                 <div className="text-center">Đang tải...</div>
-                            ) : orderDetails ? (
+                            ) : (orderDetails as any)?.order ? (
                                 <>
 
                                     {/* Thông tin cơ bản */}
                                     <div className="grid grid-cols-2 gap-4 text-sm">
-                                        <div><strong>Mã đơn:</strong> {(orderDetails as any)?.order.orderNumber}</div>
+                                        <div><strong>Mã đơn:</strong> {(orderDetails as any)?.order?.orderNumber}</div>
                                         <div><strong>Tổng tiền:</strong> {formatPrice((orderDetails as any).order.total)}</div>
                                         <div><strong>Ngày đặt:</strong> {new Date((orderDetails as any).order.createdAt).toLocaleDateString('vi-VN')}</div>
                                         {/* <div><strong>Ngày sử dụng12:</strong> {(() => {
-                                            const snap = orderDetails.order.metadata?.bookingDataSnapshot;
+                                            const snap = (orderDetails as any).order.metadata?.bookingDataSnapshot;
                                             const originalServiceDateRaw = snap?.details?.startDateTime ?? snap?.details?.date;
-                                            const serviceDateRaw = orderDetails.order.changeCalendar && orderDetails.order.dateChangeCalendar ? orderDetails.order.dateChangeCalendar : originalServiceDateRaw;
+                                            const serviceDateRaw = (orderDetails as any).order.changeCalendar && (orderDetails as any).order.dateChangeCalendar ? (orderDetails as any).order.dateChangeCalendar : originalServiceDateRaw;
                                             const serviceDateObj = serviceDateRaw ? new Date(serviceDateRaw) : null;
                                             return serviceDateObj ? serviceDateObj.toISOString().slice(0, 10) : '--';
                                         })()}</div> */}
@@ -1660,7 +1692,7 @@ function TaiKhoan() {
                                     </div>
                                 </>
                             ) : (
-                                <div className="text-center text-red-500">Không thể tải chi tiết đơn hàng</div>
+                                <div className="text-center text-red-500">Không thể tải chi tiết đơn hàng{detailError ? ` (${detailError})` : ''}</div>
                             )}
                         </div>
                         <ModalFooter>

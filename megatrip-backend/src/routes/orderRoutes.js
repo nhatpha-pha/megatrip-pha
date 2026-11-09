@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/orderController');
-const { protect, adminOnly, optionalAuth } = require('../middleware/auth');
+const { protect, adminOnly } = require('../middleware/auth');
 
 /**
  * @swagger
@@ -33,7 +33,7 @@ const { protect, adminOnly, optionalAuth } = require('../middleware/auth');
  *       201: { description: Đã tạo đơn hàng }
  */
 router.get('/', protect, adminOnly, ctrl.listOrders);
-router.post('/', optionalAuth, ctrl.createOrder);
+router.post('/', protect, ctrl.createOrder);
 
 /**
  * @swagger
@@ -45,6 +45,7 @@ router.post('/', optionalAuth, ctrl.createOrder);
  *       200: { description: Danh sách thống kê }
  */
 router.get('/stats/by-customers', protect, adminOnly, ctrl.statsByCustomers);
+router.post('/stats/by-customers', protect, adminOnly, ctrl.statsByCustomers); // admin gửi { ids: [...] }
 
 /**
  * @swagger
@@ -136,8 +137,9 @@ router.put('/:id/change-calendar', protect, ctrl.changeOrderCalendar);
  *     responses:
  *       200: { description: Đã xoá }
  */
+router.put('/:id/cancel', protect, adminOnly, ctrl.cancelOrder); // admin hủy đơn
 router.get('/:id', protect, ctrl.getOrderById);
-router.put('/:id', protect, adminOnly, ctrl.updateOrder); // chỉ admin/staff được đổi trạng thái đơn
+router.put('/:id', protect, ctrl.updateOrder);
 router.delete('/:id', protect, adminOnly, ctrl.deleteOrder);
 
 module.exports = router;

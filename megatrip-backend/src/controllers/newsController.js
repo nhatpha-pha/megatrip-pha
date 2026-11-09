@@ -1,20 +1,44 @@
 const asyncHandler = require('express-async-handler');
 const slugify = require('slugify');
 const News = require('../models/News');
+const { clean, escapeRegex, paging, parseIds } = require('../utils/listQuery');
 
-// GET /api/admin/news
+// GET /api/admin/news  (nhận cả limit/pageSize, q/search; bỏ qua bộ lọc "all")
 const listNews = asyncHandler(async (req, res) => {
-  const { page = 1, pageSize = 6, status, category, search } = req.query;
+  const { page, pageSize } = paging(req.query, 6);
+  const status = clean(req.query.status);
+  const category = clean(req.query.category);
+  const search = clean(req.query.search ?? req.query.q);
   const filter = {};
   if (status) filter.status = status;
   if (category) filter.category = category;
-  if (search) filter.title = { $regex: search, $options: 'i' };
+  if (search) filter.title = { $regex: escapeRegex(search), $options: 'i' };
   const total = await News.countDocuments(filter);
   const data = await News.find(filter)
     .sort({ createdAt: -1 })
-    .skip((Number(page) - 1) * Number(pageSize))
-    .limit(Number(pageSize));
-  res.json({ data, pagination: { total, current: Number(page), pageSize: Number(pageSize) } });
+    .skip((page - 1) * pageSize)
+    .limit(pageSize);
+  res.json({ data, pagination: { total, current: page, pageSize } });
+});
+
+// POST /api/admin/news/bulk  { action: 'publish' | 'unpublish' | 'archive' | 'delete', ids: [] }
+const bulkNews = asyncHandler(async (req, res) => {
+  const ids = parseIds(req.body);
+  const { action } = req.body || {};
+  if (!ids.length) {
+    res.status(400);
+    throw new Error('Chưa chọn bài viết nào');
+  }
+  let result;
+  if (action === 'publish') result = await News.updateMany({ _id: { $in: ids } }, { $set: { status: 'published', publishedAt: new Date() } });
+  else if (action === 'unpublish') result = await News.updateMany({ _id: { $in: ids } }, { $set: { status: 'unpublished' } });
+  else if (action === 'archive') result = await News.updateMany({ _id: { $in: ids } }, { $set: { status: 'archived' } });
+  else if (action === 'delete') result = await News.deleteMany({ _id: { $in: ids } });
+  else {
+    res.status(400);
+    throw new Error('Thao tác không hợp lệ');
+  }
+  res.json({ data: { action, affected: result.modifiedCount ?? result.deletedCount ?? 0 } });
 });
 
 // GET /api/admin/news/:id
@@ -68,4 +92,4 @@ const deleteNews = asyncHandler(async (req, res) => {
   res.json({ data: { message: 'Đã xoá bài viết' } });
 });
 
-module.exports = { listNews, getNewsById, getNewsBySlug, createNews, updateNews, deleteNews };
+module.exports = { listNews, bulkNews, getNewsById, getNewsBySlug, createNews, updateNews, deleteNews };

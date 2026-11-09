@@ -104,7 +104,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         }
         const meRes: any = await auth.me();
         // Allow both 'admin' and 'employee' roles to access admin UI.
-        if (!meRes || (meRes.role !== 'admin' && meRes.role !== 'employee')) {
+        if (!meRes || (meRes.role !== 'admin' && meRes.role !== 'employee' && meRes.role !== 'staff')) {
           localStorage.removeItem('accessToken');
           router.push('/admin/login');
           return;
@@ -186,7 +186,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </Button>
           </div>
           <nav className="flex-1 px-3 py-4 space-y-1">
-            {(user?.role === 'employee' ? navigation.filter(n => ['/admin/orders','/admin/support'].includes(n.href)) : navigation).map((item) => {
+            {((user?.role === 'employee' || user?.role === 'staff') ? navigation.filter(n => ['/admin/orders','/admin/support'].includes(n.href)) : navigation).map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -242,7 +242,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </Button>
           </div>
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            {(user?.role === 'employee' ? navigation.filter(n => ['/admin/orders','/admin/support'].includes(n.href)) : navigation).map((item) => {
+            {((user?.role === 'employee' || user?.role === 'staff') ? navigation.filter(n => ['/admin/orders','/admin/support'].includes(n.href)) : navigation).map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
@@ -305,7 +305,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                           </svg>
                           <span className="ml-1 text-sm font-medium text-gray-900 md:ml-2">
-                            {getBreadcrumb(user ? (user.role === 'employee' ? navigation.filter(n => ['/admin/orders','/admin/support'].includes(n.href)) : navigation) : navigation)}
+                            {getBreadcrumb(user ? ((user.role === 'employee' || user.role === 'staff') ? navigation.filter(n => ['/admin/orders','/admin/support'].includes(n.href)) : navigation) : navigation)}
                           </span>
                         </div>
                       </li>

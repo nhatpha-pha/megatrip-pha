@@ -1,7 +1,16 @@
 const mongoose = require('mongoose');
 
 const itineraryDaySchema = new mongoose.Schema(
-  { dayNumber: Number, title: String, details: String },
+  {
+    dayNumber: Number,
+    title: String,
+    details: String,
+    // dạng trang admin gửi lên
+    day: Number,
+    address: String,
+    description: String,
+    image: String,
+  },
   { _id: false }
 );
 
@@ -40,6 +49,11 @@ const tourSchema = new mongoose.Schema(
       pickupDropoff: String,
     },
     cancellationPolicy: { type: String, default: '' },
+    metaTitle: { type: String, default: '' },
+    metaDescription: { type: String, default: '' },
+    metaKeywords: { type: String, default: '' },
+    ratingsAverage: { type: Number, default: 0 },
+    ratingsQuantity: { type: Number, default: 0 },
     slots: [
       {
         date: String,

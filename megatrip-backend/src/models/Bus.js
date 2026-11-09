@@ -25,6 +25,9 @@ const busSchema = new mongoose.Schema(
     pickupPoints: [String],
     dropoffPoints: [String],
     amenities: [String],
+    infantPrice: { type: Number, default: 0 },
+    // Sơ đồ ghế gốc do admin thiết kế: [{ seatId, label, type, status, pos: { r, c } }]
+    seatMap: { type: [mongoose.Schema.Types.Mixed], default: [] },
     images: [String],
     slots: [
       {

@@ -38,7 +38,7 @@ const register = asyncHandler(async (req, res) => {
 // @route POST /api/auth/verify-otp
 const verifyOtp = asyncHandler(async (req, res) => {
   const { email, code } = req.body;
-  const user = await User.findOne({ email: email?.toLowerCase() }).select('+otpCode +otpExpires +otpAttempts');
+  const user = await User.findOne({ email: email?.toLowerCase() }).select('+otpCode +otpExpires');
   if (!user) {
     res.status(404);
     throw new Error('Không tìm thấy tài khoản');
@@ -46,17 +46,7 @@ const verifyOtp = asyncHandler(async (req, res) => {
   if (user.isVerified) {
     return res.json({ data: { message: 'Tài khoản đã được xác thực trước đó' } });
   }
-  if (!user.otpCode || user.otpCode !== String(code) || user.otpExpires < new Date()) {
-    // Mỗi mã OTP chỉ được thử tối đa 5 lần, sau đó phải yêu cầu gửi lại mã mới
-    if (user.otpCode) {
-      user.otpAttempts = (user.otpAttempts || 0) + 1;
-      if (user.otpAttempts >= 5) {
-        user.otpCode = undefined;
-        user.otpExpires = undefined;
-        user.otpAttempts = 0;
-      }
-      await user.save();
-    }
+  if (!user.otpCode || user.otpCode !== code || user.otpExpires < new Date()) {
     res.status(400);
     throw new Error('Mã OTP không đúng hoặc đã hết hạn');
   }
@@ -80,7 +70,6 @@ const resendOtp = asyncHandler(async (req, res) => {
   }
   const otpCode = generateOtp();
   user.otpCode = otpCode;
-  user.otpAttempts = 0;
   user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
   await user.save();
   await sendMail({
@@ -157,14 +146,43 @@ const getMe = asyncHandler(async (req, res) => {
   res.json({ data: req.user.toJSON() });
 });
 
-// @route PUT /api/auth/me  (updateProfile: name, address, phone, dob)
+// Lưu tùy chọn thanh toán (phương thức ưa thích + thông tin xuất hóa đơn). Không nhận số thẻ/CVV.
+const SAVEABLE_METHODS = ['momo', 'zalopay', 'vnpay', 'cod', 'bank_transfer'];
+const clip = (v, n) => String(v ?? '').trim().slice(0, n);
+const applySavedPayment = (user, input) => {
+  const sp = input || {};
+  if (sp.clear === true) {
+    user.savedPayment = { preferredMethod: '', invoice: { companyName: '', taxCode: '', address: '', email: '' } };
+    return;
+  }
+  const cur = (user.savedPayment && user.savedPayment.toObject ? user.savedPayment.toObject() : user.savedPayment) || {};
+  const next = {
+    preferredMethod: cur.preferredMethod || '',
+    invoice: { companyName: '', taxCode: '', address: '', email: '', ...(cur.invoice || {}) },
+  };
+  if (sp.preferredMethod !== undefined) {
+    next.preferredMethod = SAVEABLE_METHODS.includes(sp.preferredMethod) ? sp.preferredMethod : '';
+  }
+  if (sp.invoice && typeof sp.invoice === 'object') {
+    next.invoice = {
+      companyName: clip(sp.invoice.companyName, 150),
+      taxCode: clip(sp.invoice.taxCode, 20),
+      address: clip(sp.invoice.address, 255),
+      email: clip(sp.invoice.email, 120),
+    };
+  }
+  user.savedPayment = next;
+};
+
+// @route PUT /api/auth/me  (updateProfile: name, address, phone, dob, savedPayment)
 const updateMe = asyncHandler(async (req, res) => {
-  const { name, address, phone, dob } = req.body;
+  const { name, address, phone, dob, savedPayment } = req.body;
   const user = req.user;
   if (name !== undefined) user.name = name;
   if (address !== undefined) user.address = address;
   if (phone !== undefined) user.phone = phone;
   if (dob !== undefined) user.dob = dob;
+  if (savedPayment !== undefined) applySavedPayment(user, savedPayment);
   await user.save();
   res.json({ data: user.toJSON() });
 });
@@ -185,26 +203,50 @@ const changePassword = asyncHandler(async (req, res) => {
 
 // ===== Admin: users management =====
 
-// @route GET /api/auth/users
-const listUsers = asyncHandler(async (req, res) => {
-  const { page = 1, pageSize = 10, search = '', role, status } = req.query;
-  const filter = {};
-  if (search) {
-    filter.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } },
-    ];
+// ----- Vai trò: admin giao diện cũ dùng 'user'/'employee', backend dùng 'customer'/'staff' -----
+const ROLE_ALIAS = { user: 'customer', employee: 'staff' };
+const VALID_ROLES = ['customer', 'admin', 'staff'];
+const normRole = (r) => {
+  const v = String(r ?? '').trim();
+  const mapped = ROLE_ALIAS[v] || v;
+  return VALID_ROLES.includes(mapped) ? mapped : null;
+};
+const escapeRegex = (str) => String(str).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Chỉ admin mới được tạo/sửa/xóa tài khoản admin hoặc nhân viên; staff chỉ quản lý khách hàng.
+const assertCanManage = (actor, targetRole, res) => {
+  if (targetRole !== 'customer' && (!actor || actor.role !== 'admin')) {
+    res.status(403);
+    throw new Error('Chỉ admin mới được quản lý tài khoản admin/nhân viên');
   }
-  if (role) filter.role = role;
+};
+
+// @route GET /api/auth/users?role=customer|admin,employee&q=...&page=1&limit=10
+const listUsers = asyncHandler(async (req, res) => {
+  const { search = '', q = '', role, status } = req.query;
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const pageSize = Math.min(Math.max(Number(req.query.pageSize || req.query.limit) || 10, 1), 200);
+  const filter = {};
+  const keyword = String(search || q || '').trim();
+  if (keyword) {
+    const rx = escapeRegex(keyword);
+    filter.$or = [{ name: { $regex: rx, $options: 'i' } }, { email: { $regex: rx, $options: 'i' } }, { phone: { $regex: rx, $options: 'i' } }];
+  }
+  if (role) {
+    const roles = String(role).split(',').map(normRole).filter(Boolean);
+    filter.role = { $in: roles.length ? roles : ['__none__'] };
+  }
   if (status) filter.status = status;
 
   const total = await User.countDocuments(filter);
   const users = await User.find(filter)
     .sort({ createdAt: -1 })
-    .skip((Number(page) - 1) * Number(pageSize))
-    .limit(Number(pageSize));
+    .skip((page - 1) * pageSize)
+    .limit(pageSize);
 
-  res.json({ data: users.map((u) => u.toJSON()), pagination: { total, current: Number(page), pageSize: Number(pageSize) } });
+  res.json({
+    data: { users: users.map((u) => u.toJSON()), total, page, limit: pageSize },
+    pagination: { total, current: page, pageSize },
+  });
 });
 
 // @route GET /api/auth/user/:id
@@ -219,14 +261,38 @@ const getUserById = asyncHandler(async (req, res) => {
 
 // @route POST /api/auth/admin/user
 const adminCreateUser = asyncHandler(async (req, res) => {
-  const { email, password, name, role = 'customer' } = req.body;
-  const existing = await User.findOne({ email: email?.toLowerCase() });
+  const { email, password, name, phone, address, status, isVerified } = req.body;
+  const role = normRole(req.body.role ?? 'customer');
+  if (!role) {
+    res.status(400);
+    throw new Error('Vai trò không hợp lệ (customer, staff hoặc admin)');
+  }
+  assertCanManage(req.user, role, res);
+  const mail = String(email || '').trim().toLowerCase();
+  if (!mail || !/^\S+@\S+\.\S+$/.test(mail)) {
+    res.status(400);
+    throw new Error('Email không hợp lệ');
+  }
+  if (password && String(password).length < 6) {
+    res.status(400);
+    throw new Error('Mật khẩu tối thiểu 6 ký tự');
+  }
+  const existing = await User.findOne({ email: mail });
   if (existing) {
     res.status(400);
     throw new Error('Email đã tồn tại');
   }
   const hashed = await bcrypt.hash(password || '123456', 10);
-  const user = await User.create({ email: email.toLowerCase(), password: hashed, name, role, isVerified: true });
+  const user = await User.create({
+    email: mail,
+    password: hashed,
+    name: name || '',
+    phone: phone || '',
+    address: address || '',
+    role,
+    status: status === 'blocked' ? 'blocked' : 'active',
+    isVerified: isVerified === undefined ? true : !!isVerified,
+  });
   res.status(201).json({ data: user.toJSON() });
 });
 
@@ -237,24 +303,55 @@ const adminUpdateUser = asyncHandler(async (req, res) => {
     res.status(404);
     throw new Error('Không tìm thấy người dùng');
   }
-  const { name, phone, address, role, status, email } = req.body;
+  assertCanManage(req.user, user.role, res);
+  const { name, phone, address, status, email, password, isVerified } = req.body;
+  if (req.body.role !== undefined) {
+    const role = normRole(req.body.role);
+    if (!role) {
+      res.status(400);
+      throw new Error('Vai trò không hợp lệ (customer, staff hoặc admin)');
+    }
+    assertCanManage(req.user, role, res);
+    user.role = role;
+  }
   if (name !== undefined) user.name = name;
   if (phone !== undefined) user.phone = phone;
   if (address !== undefined) user.address = address;
-  if (role !== undefined) user.role = role;
-  if (status !== undefined) user.status = status;
-  if (email !== undefined) user.email = email.toLowerCase();
+  if (status !== undefined) user.status = status === 'blocked' ? 'blocked' : 'active';
+  if (isVerified !== undefined) user.isVerified = !!isVerified;
+  if (email !== undefined) {
+    const mail = String(email).trim().toLowerCase();
+    const dup = await User.findOne({ email: mail, _id: { $ne: user._id } });
+    if (dup) {
+      res.status(400);
+      throw new Error('Email đã tồn tại');
+    }
+    user.email = mail;
+  }
+  if (password) {
+    if (String(password).length < 6) {
+      res.status(400);
+      throw new Error('Mật khẩu tối thiểu 6 ký tự');
+    }
+    user.password = await bcrypt.hash(String(password), 10);
+  }
   await user.save();
   res.json({ data: user.toJSON() });
 });
 
 // @route DELETE /api/auth/admin/user/:id
 const adminDeleteUser = asyncHandler(async (req, res) => {
-  const user = await User.findByIdAndDelete(req.params.id);
+  const user = await User.findById(req.params.id);
   if (!user) {
     res.status(404);
     throw new Error('Không tìm thấy người dùng');
   }
+  assertCanManage(req.user, user.role, res);
+  if (String(user._id) === String(req.user._id)) {
+    res.status(400);
+    throw new Error('Không thể tự xoá tài khoản của chính mình');
+  }
+  await user.deleteOne();
   res.json({ data: { message: 'Đã xoá người dùng' } });
 });
 

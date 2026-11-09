@@ -41,11 +41,12 @@ export async function me() {
     return axiosAuth.get(API_NAMES.users.me);
 }
 
-export async function listUsers(params?: { page?: number; limit?: number; q?: string }) {
+export async function listUsers(params?: { page?: number; limit?: number; q?: string; role?: string }) {
     const query = [] as string[];
     if (params?.page) query.push(`page=${params.page}`);
     if (params?.limit) query.push(`limit=${params.limit}`);
     if (params?.q) query.push(`q=${encodeURIComponent(params.q)}`);
+    if (params?.role) query.push(`role=${encodeURIComponent(params.role)}`);
     const url = `${API_NAMES.users.list}${query.length ? `?${query.join('&')}` : ''}`;
     return axiosAuth.get(url);
 }
@@ -54,11 +55,11 @@ export async function getUserById(id: string) {
     return axiosAuth.get(`${API_NAMES.users.getById}/${id}`);
 }
 
-export async function adminCreateUser(payload: { name?: string; email: string; password: string; role?: string; phone?: string; address?: string }) {
+export async function adminCreateUser(payload: { name?: string; email: string; password: string; role?: string; phone?: string; address?: string; status?: string; isVerified?: boolean }) {
     return axiosAuth.post(API_NAMES.users.adminCreate, payload);
 }
 
-export async function adminUpdateUser(id: string, payload: Partial<{ name: string; email: string; password: string; role: string; phone: string; address: string }>) {
+export async function adminUpdateUser(id: string, payload: Partial<{ name: string; email: string; password: string; role: string; phone: string; address: string; status: string; isVerified: boolean }>) {
     return axiosAuth.put(`${API_NAMES.users.adminUpdate}/${id}`, payload);
 }
 

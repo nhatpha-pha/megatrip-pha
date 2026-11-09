@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { me } from '@/apis/auth';
+import { me, updateProfile } from '@/apis/auth';
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Layout from "../components/Layout";
@@ -861,6 +861,10 @@ function ThanhToan() {
   }>({ outbound: false, inbound: false });
   const [showTotalFareDetails, setShowTotalFareDetails] =
     useState<boolean>(false);
+  // Trạng thái nút "Lưu thông tin thanh toán"
+  const [savingPayment, setSavingPayment] = useState(false);
+  const [savePaymentMsg, setSavePaymentMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [hasSavedPayment, setHasSavedPayment] = useState(false);
   const [contactInfo, setContactInfo] = useState({
     email: "",
     phone: "",
@@ -890,6 +894,18 @@ function ThanhToan() {
           phone: (user && (user.phone ?? user.mobile)) ?? prev.phone,
           customerId: prev.customerId ?? resolvedUserId ?? null,
         }));
+        // Điền sẵn phương thức thanh toán và thông tin hóa đơn đã lưu (nếu có)
+        const saved = (user?.data ?? user)?.savedPayment;
+        if (saved) {
+          if (saved.preferredMethod && paymentMethods.some((m) => m.id === saved.preferredMethod)) {
+            setSelectedPayment(saved.preferredMethod);
+            setHasSavedPayment(true);
+          }
+          if (saved.invoice && (saved.invoice.companyName || saved.invoice.taxCode)) {
+            setInvoiceInfo((prev) => ({ ...prev, ...saved.invoice }));
+            setHasSavedPayment(true);
+          }
+        }
       } catch (err) {
         // eslint-disable-next-line no-console
         console.error('Failed to prefill contact from profile', err);
@@ -1012,6 +1028,38 @@ function ThanhToan() {
     address: "",
     email: "",
   });
+
+  // Lưu phương thức thanh toán + thông tin hóa đơn vào tài khoản (không lưu số thẻ/CVV)
+  const savePaymentInfo = async (clear = false) => {
+    if (!contactInfo.customerId) {
+      setSavePaymentMsg({ ok: false, text: "Vui lòng đăng nhập để lưu thông tin thanh toán." });
+      return;
+    }
+    setSavingPayment(true);
+    setSavePaymentMsg(null);
+    try {
+      const hasInvoice = !!(invoiceInfo.companyName.trim() || invoiceInfo.taxCode.trim());
+      const savedPayment = clear
+        ? { clear: true }
+        : {
+            preferredMethod: selectedPayment === "credit_card" ? "" : selectedPayment,
+            ...(hasInvoice ? { invoice: invoiceInfo } : {}),
+          };
+      await updateProfile({ savedPayment } as any);
+      setHasSavedPayment(!clear);
+      setSavePaymentMsg({
+        ok: true,
+        text: clear ? "Đã xóa thông tin thanh toán đã lưu." : "Đã lưu thông tin thanh toán cho lần sau.",
+      });
+    } catch (err: any) {
+      setSavePaymentMsg({
+        ok: false,
+        text: err?.response?.data?.message || "Không thể lưu, vui lòng thử lại.",
+      });
+    } finally {
+      setSavingPayment(false);
+    }
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -2651,6 +2699,46 @@ function ThanhToan() {
                           </div>
                         </div>
                       </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Lưu thông tin thanh toán cho lần sau */}
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="font-medium">Lưu thông tin thanh toán</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Lưu phương thức thanh toán đang chọn và thông tin xuất hóa đơn để tự điền cho lần đặt sau.
+                          Chúng tôi không lưu số thẻ hay mã CVV.
+                        </p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={savingPayment}
+                          onClick={() => savePaymentInfo(false)}
+                        >
+                          {savingPayment ? "Đang lưu..." : "Lưu thông tin"}
+                        </Button>
+                        {hasSavedPayment && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            disabled={savingPayment}
+                            onClick={() => savePaymentInfo(true)}
+                          >
+                            Xóa đã lưu
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    {savePaymentMsg && (
+                      <p className={`text-sm mt-3 ${savePaymentMsg.ok ? "text-green-600" : "text-red-500"}`}>
+                        {savePaymentMsg.text}
+                      </p>
                     )}
                   </CardContent>
                 </Card>

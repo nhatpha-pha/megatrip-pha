@@ -36,6 +36,7 @@ const { protect, adminOnly } = require('../middleware/auth');
  *       201: { description: Đã tạo tour }
  */
 router.get('/', ctrl.listTours);
+router.get('/admin', protect, adminOnly, ctrl.listToursAdmin); // phải đứng TRƯỚC '/:id'
 router.post('/', protect, adminOnly, ctrl.createTour);
 
 /**
@@ -94,6 +95,7 @@ router.get('/slug/:slug', ctrl.getTourBySlug);
  *       201: { description: Đã thêm slot }
  */
 router.get('/:id/slots', ctrl.getTourSlots);
+router.get('/:id/slots/:dateIso', ctrl.getTourSlotByDate);
 router.post('/:id/slots', protect, adminOnly, ctrl.addTourSlot);
 
 /**

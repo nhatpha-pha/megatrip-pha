@@ -30,6 +30,7 @@ const { protect, adminOnly } = require('../middleware/auth');
  *       201: { description: Đã tạo }
  */
 router.get('/', ctrl.listBuses);
+router.post('/bulk', protect, adminOnly, ctrl.bulkBuses); // admin: kích hoạt / ẩn / xóa nhiều chuyến
 
 /**
  * @swagger

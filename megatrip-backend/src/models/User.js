@@ -13,10 +13,19 @@ const userSchema = new mongoose.Schema(
     isVerified: { type: Boolean, default: false },
     otpCode: { type: String, select: false },
     otpExpires: { type: Date, select: false },
-    otpAttempts: { type: Number, default: 0, select: false },
     resetToken: { type: String, select: false },
     resetTokenExpires: { type: Date, select: false },
     status: { type: String, enum: ['active', 'blocked'], default: 'active' },
+    // Tùy chọn thanh toán khách muốn lưu cho lần sau. TUYỆT ĐỐI không lưu số thẻ / CVV.
+    savedPayment: {
+      preferredMethod: { type: String, enum: ['', 'momo', 'zalopay', 'vnpay', 'cod', 'bank_transfer'], default: '' },
+      invoice: {
+        companyName: { type: String, default: '' },
+        taxCode: { type: String, default: '' },
+        address: { type: String, default: '' },
+        email: { type: String, default: '' },
+      },
+    },
   },
   { timestamps: true }
 );
@@ -30,7 +39,6 @@ userSchema.set('toJSON', {
     delete ret.password;
     delete ret.otpCode;
     delete ret.otpExpires;
-    delete ret.otpAttempts;
     delete ret.resetToken;
     delete ret.resetTokenExpires;
     return ret;

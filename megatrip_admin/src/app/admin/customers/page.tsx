@@ -254,16 +254,17 @@ export default function Customers() {
         pageSize: 10,
     });
 
-    // Fetch customers from API (filter role === 'user')
+    // Fetch customers from API (role === 'customer')
     const { data: customersData, isLoading, error, refetch } = useQuery({
         queryKey: ['customers', pagination.current, pagination.pageSize, searchQuery, filters],
         queryFn: async () => {
-            const res: any = await api.listUsers({ page: pagination.current, limit: pagination.pageSize, q: searchQuery });
+            const res: any = await api.listUsers({ page: pagination.current, limit: pagination.pageSize, q: searchQuery, role: 'customer' });
             // res should be { users, total, page, limit } or { data: { users, total } }
             const dataObj = res?.data || res || {};
-            const usersRaw = dataObj.users || [];
-            const users = usersRaw.filter((u: any) => u.role === 'user');
-            const total = dataObj.total || 0;
+            // Chấp nhận cả 2 dạng: { users, total } (backend mới) hoặc mảng users (backend cũ)
+            const usersRaw: any[] = Array.isArray(dataObj) ? dataObj : (dataObj.users || []);
+            const users = usersRaw.filter((u: any) => u.role === 'customer' || u.role === 'user');
+            const total = Array.isArray(dataObj) ? usersRaw.length : (dataObj.total ?? usersRaw.length);
 
             // fetch aggregated order stats for displayed users
             try {
@@ -336,7 +337,7 @@ export default function Customers() {
                 name: data.name,
                 email: data.email,
                 password: data.password || Math.random().toString(36).slice(-8),
-                role: 'user',
+                role: 'customer',
                 phone: data.phone,
                 address: data.address,
                 // admin can set status via formData.status (active => isVerified=true)

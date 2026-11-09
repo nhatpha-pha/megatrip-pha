@@ -46,6 +46,7 @@ router.get('/slug/:slug', ctrl.getNewsBySlug);
  *       201: { description: Đã tạo bài viết }
  */
 router.get('/', ctrl.listNews);
+router.post('/bulk', protect, adminOnly, ctrl.bulkNews); // admin: đăng / lưu trữ / xóa nhiều bài
 router.post('/', protect, adminOnly, ctrl.createNews);
 
 /**

@@ -1,20 +1,48 @@
 const asyncHandler = require('express-async-handler');
 const Promotion = require('../models/Promotion');
+const { clean, escapeRegex, paging, parseIds } = require('../utils/listQuery');
 
-// GET /api/promotions
+// GET /api/promotions  (bỏ qua các bộ lọc "all")
 const listPromotions = asyncHandler(async (req, res) => {
-  const { page = 1, pageSize = 10, status, appliesTo, type } = req.query;
+  const { page, pageSize } = paging(req.query, 10);
+  const status = clean(req.query.status);
+  const appliesTo = clean(req.query.appliesTo);
+  const type = clean(req.query.type);
+  const search = clean(req.query.search ?? req.query.q);
   const filter = {};
   if (status === 'active') filter.active = true;
   if (status === 'inactive') filter.active = false;
   if (appliesTo) filter.appliesTo = appliesTo;
   if (type) filter.type = type;
+  if (search) {
+    const rx = { $regex: escapeRegex(search), $options: 'i' };
+    filter.$or = [{ code: rx }, { title: rx }, { description: rx }];
+  }
   const total = await Promotion.countDocuments(filter);
   const data = await Promotion.find(filter)
     .sort({ createdAt: -1 })
-    .skip((Number(page) - 1) * Number(pageSize))
-    .limit(Number(pageSize));
-  res.json({ data, pagination: { total, current: Number(page), pageSize: Number(pageSize) } });
+    .skip((page - 1) * pageSize)
+    .limit(pageSize);
+  res.json({ data, pagination: { total, current: page, pageSize } });
+});
+
+// POST /api/promotions/bulk  { action: 'activate' | 'deactivate' | 'delete', ids: [] }
+const bulkPromotions = asyncHandler(async (req, res) => {
+  const ids = parseIds(req.body);
+  const { action } = req.body || {};
+  if (!ids.length) {
+    res.status(400);
+    throw new Error('Chưa chọn khuyến mãi nào');
+  }
+  let result;
+  if (action === 'activate') result = await Promotion.updateMany({ _id: { $in: ids } }, { $set: { active: true } });
+  else if (action === 'deactivate') result = await Promotion.updateMany({ _id: { $in: ids } }, { $set: { active: false } });
+  else if (action === 'delete') result = await Promotion.deleteMany({ _id: { $in: ids } });
+  else {
+    res.status(400);
+    throw new Error('Thao tác không hợp lệ');
+  }
+  res.json({ data: { action, affected: result.modifiedCount ?? result.deletedCount ?? 0 } });
 });
 
 // GET /api/promotions/:id
@@ -88,6 +116,7 @@ const validatePromotion = asyncHandler(async (req, res) => {
 
 module.exports = {
   listPromotions,
+  bulkPromotions,
   getPromotionById,
   createPromotion,
   updatePromotion,

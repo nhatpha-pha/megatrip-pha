@@ -27,7 +27,7 @@ export default function AdminLoginPage() {
                 return;
             }
             localStorage.setItem('accessToken', token);
-            if (user?.role !== 'admin' && user?.role !== 'employee') {
+            if (user?.role !== 'admin' && user?.role !== 'employee' && user?.role !== 'staff') {
                 localStorage.removeItem('accessToken');
                 setError('Tài khoản không có quyền quản trị');
                 setLoading(false);
